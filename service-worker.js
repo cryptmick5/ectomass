@@ -1,4 +1,4 @@
-const CACHE = 'ectomass-v4';
+const CACHE = 'ectomass-v5';
 const ASSETS = [
   'index.html',
   'manifest.webmanifest',

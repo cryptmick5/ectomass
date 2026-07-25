@@ -123,6 +123,15 @@ button:focus-visible,.snav:focus-visible,.chip:focus-visible,.wkbox:focus-visibl
 .center{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .between>*,.center>*{min-width:0}
 @media(max-width:400px){.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr}}
+.shop-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dashed var(--line2);cursor:pointer;transition:opacity .2s}
+.shop-row:last-child{border-bottom:none}
+.shop-row .cbox{width:24px;height:24px;flex-shrink:0;border-radius:7px;border:1.5px solid var(--line2);display:grid;place-items:center;font-size:13px;color:transparent;transition:.22s var(--spring)}
+.shop-row.checked{opacity:.42}
+.shop-row.checked .nm{text-decoration:line-through}
+.shop-row.checked .cbox{background:var(--green);border-color:var(--green);color:#04140a}
+.shop-row .nm{flex:1;min-width:0}
+.shop-cat{font-size:11.5px;font-weight:750;color:var(--accent2);letter-spacing:.03em;margin:14px 0 4px}
+.shop-cat:first-child{margin-top:0}
 .qty-row{flex-wrap:nowrap;gap:8px}
 .qty-row input{flex:1 1 auto;width:auto;min-width:56px}
 .qty-row .btn,.qty-row .chip{flex:0 0 auto}
@@ -367,6 +376,7 @@ hr{border:none;border-top:1px solid var(--line2);margin:14px 0}
 
     <!-- ============ HOME ============ -->
     <section class="page active" id="page-home">
+      <div class="warnbar" id="backup-warn"></div>
       <div class="warnbar" id="profile-warn">⚠️ <span style="flex:1;min-width:170px"><b>Profil incomplet</b> — ton objectif calorique est estimé sur un profil type.</span><button class="btn ghost mini" onclick="openOnboarding()">Compléter</button></div>
       <div class="grid dash">
         <div>
@@ -410,6 +420,7 @@ hr{border:none;border-top:1px solid var(--line2);margin:14px 0}
     <!-- ============ TRAIN ============ -->
     <section class="page" id="page-train">
       <div class="between" style="margin-bottom:6px"><h1 style="margin:0">Entraînement</h1><span class="pill dl" id="phase-pill"></span></div>
+      <div class="warnbar" id="resume-bar"></div>
       <p class="small" style="margin:0 0 14px">Mésocycle 12 semaines · full-body 3×/sem · surcharge progressive adaptative.</p>
 
       <div class="card tight">
@@ -460,20 +471,18 @@ hr{border:none;border-top:1px solid var(--line2);margin:14px 0}
 
       <div id="food-plan-view" style="display:none">
         <div id="plan-day-view">
+          <button class="btn ghost" id="show-shopping" style="margin-bottom:12px">🛒 Liste de courses du jour</button>
           <div class="tip" style="margin-bottom:14px"><span class="i">🍽️</span><div>Journée composée automatiquement pour <b id="plan-target">—</b> kcal · <span id="plan-meals-n">5</span> prises · sans poisson ni fruits de mer. Échange chaque plat qui ne te plaît pas.</div></div>
           <div class="between" style="margin-bottom:12px"><b>Menu généré</b><span class="center" style="gap:8px"><button class="btn ghost sm" id="reset-choices" style="display:none;color:var(--amber)">↺ Mes choix</button><button class="btn ghost sm" id="regen-plan">↻ Nouvelle journée</button></span></div>
           <div id="plan-totals" class="card tight" style="margin-bottom:12px"></div>
           <div id="plan-meals"></div>
-          <button class="btn ghost" id="show-shopping" style="margin-top:4px">🛒 Liste de courses (jour)</button>
-          <div id="shopping-list" style="display:none;margin-top:12px"></div>
         </div>
 
         <div id="plan-week-view" style="display:none">
+          <button class="btn ghost" id="show-week-shopping" style="margin-bottom:12px">🛒 Liste de courses de la semaine</button>
           <div class="tip" style="margin-bottom:14px"><span class="i">📅</span><div>Semaine complète de menus pour anticiper tes courses. 7 jours calibrés sur <b id="week-target">—</b> kcal/jour. Génère la liste de courses de toute la semaine en un clic.</div></div>
           <div class="between" style="margin-bottom:12px"><b>Menus de la semaine</b><span class="center" style="gap:8px"><button class="btn ghost sm" id="reset-choices-week" style="display:none;color:var(--amber)">↺ Mes choix</button><button class="btn ghost sm" id="regen-week">↻ Régénérer</button></span></div>
           <div id="week-plan"></div>
-          <button class="btn" id="show-week-shopping" style="margin-top:4px">🛒 Liste de courses de la semaine</button>
-          <div id="week-shopping-list" style="display:none;margin-top:12px"></div>
         </div>
       </div>
     </section>
@@ -536,6 +545,12 @@ hr{border:none;border-top:1px solid var(--line2);margin:14px 0}
           <div class="card tight" id="profile-results"></div>
           <div class="tip"><span class="i">🧬</span><div><b>Profil ectomorphe.</b> Métabolisme rapide, prise de masse difficile. Surplus constant, protéines élevées, glucides abondants, cardio limité, et surtout <b>régularité des repas</b>.</div></div>
         </div>
+      </div>
+      <div class="card tight">
+        <div class="between"><div style="flex:1;min-width:180px"><b>🔔 Alerte de fin de repos</b><div class="small muted" id="notif-state">Être prévenu même si l'app est en arrière-plan.</div></div><button class="btn ghost sm" id="notif-toggle">Activer</button></div>
+      </div>
+      <div class="card tight">
+        <div class="between"><div style="flex:1;min-width:180px"><b>💾 Sauvegarde</b><div class="small muted" id="backup-state"></div></div><button class="btn ghost sm" id="backup-now">Sauvegarder</button></div>
       </div>
       <div class="grid g3 mstack">
         <button class="btn ghost" id="export-data">⬇ Exporter (JSON)</button>
@@ -630,6 +645,12 @@ hr{border:none;border-top:1px solid var(--line2);margin:14px 0}
   </div>
 </div></div>
 
+<!-- Shopping modal -->
+<div class="modal" id="shop-modal" role="dialog" aria-modal="true" aria-labelledby="shop-title"><div class="sheet">
+  <div class="between" style="margin-bottom:12px"><h2 id="shop-title" style="margin:0">🛒 Liste de courses</h2><button class="del" id="close-shop" aria-label="Fermer" style="font-size:24px">✕</button></div>
+  <div id="shop-body"></div>
+</div></div>
+
 <!-- Plate modal -->
 <div class="modal" id="plate-modal" role="dialog" aria-modal="true" aria-label="Calcul des disques"><div class="sheet">
   <div class="between" style="margin-bottom:14px"><h2 style="margin:0">⚖️ Calcul des disques</h2><button class="del" id="close-plate" aria-label="Fermer" style="font-size:24px">✕</button></div>
@@ -674,7 +695,7 @@ const capitalize=s=>s.charAt(0).toUpperCase()+s.slice(1);
 /* ---------------- DATA ---------------- */
 const DEFAULT={
   profile:{sex:'h',age:25,height:178,weight:65,activity:1.375,surplus:400,meals:5},
-  startDate:todayKey(), weightLog:[], workoutLog:{}, exoState:{}, foodLog:{}, plan:{seed:1,daySeed:{},overrides:{},date:'',removed:[]}, view:{week:null}, recentFoods:[], customFoods:[], sessionPlan:{}, customExos:{}, draft:null, profileSet:false
+  startDate:todayKey(), weightLog:[], workoutLog:{}, exoState:{}, foodLog:{}, plan:{seed:1,daySeed:{},overrides:{},date:'',removed:[],checked:[]}, view:{week:null}, recentFoods:[], customFoods:[], sessionPlan:{}, customExos:{}, draft:null, profileSet:false, lastExport:null, backupSnooze:0, rest:null
 };
 let IS_FIRST_RUN=false;try{IS_FIRST_RUN=!localStorage.getItem('ectomass_v2')}catch(e){}
 let DB=load();
@@ -810,7 +831,14 @@ const WEEKS=[
   {ph:"Deload / test",setMod:-1,repAdj:2,int:"Test & récup",rir:"—",deload:true,note:"Teste tes progrès (1 top set) puis récupère avant le cycle suivant."}
 ];
 // Semaine réelle du programme (basée sur la date de début) — pilote le dashboard
-function programWeek(){const days=Math.floor((new Date(todayKey())-new Date(DB.startDate))/864e5);return clamp(Math.floor(days/7),0,11)}
+function calendarWeek(){const days=Math.floor((new Date(todayKey())-new Date(DB.startDate))/864e5);return clamp(Math.floor(days/7),0,11)}
+function sessionsDone(){return Object.keys(DB.workoutLog).length}
+function trainingWeek(){return clamp(Math.floor(sessionsDone()/3),0,11)}
+/* le programme n'avance jamais plus vite que toi : minimum du calendrier et des séances faites */
+function programWeek(){return Math.min(calendarWeek(),trainingWeek())}
+function lastSessionDate(){const k=Object.keys(DB.workoutLog).sort();return k.length?k[k.length-1]:null}
+function daysSinceLastSession(){const d=lastSessionDate();return d==null?null:Math.floor((new Date(todayKey())-new Date(d))/864e5)}
+function isComeback(){const d=daysSinceLastSession();return d!=null&&d>=10}
 // Semaine consultée sur la page Entraînement (peut être avancée manuellement pour prévisualiser)
 function viewWeek(){return DB.view.week!=null?DB.view.week:programWeek()}
 function currentWeekIdx(){return viewWeek()}
@@ -820,9 +848,11 @@ function targetSets(exoId,wk){return clamp(3+WEEKS[wk].setMod,2,5)}
 // recommendation weight
 function recoWeight(exoId,wk){
   const st=DB.exoState[exoId]; if(!st||!st.lastW) return null;
-  const role=exDef(exoId).role;
-  if(WEEKS[wk].deload) return Math.max(inc(role),Math.round(st.lastW*0.6/inc(role))*inc(role));
-  if(st.hitTop) return R(st.lastW+inc(role),1);
+  const step=inc(exDef(exoId).role);
+  const round=v=>Math.max(step,Math.round(v/step)*step);
+  if(WEEKS[wk].deload) return round(st.lastW*0.6);
+  if(isComeback()) return round(st.lastW*0.9);
+  if(st.hitTop) return R(st.lastW+step,1);
   return st.lastW;
 }
 function e1rm(w,r){return r>0?Math.round(w*(1+r/30)):w}
@@ -1006,6 +1036,9 @@ function renderHome(){
   $('#week-vol').textContent=doneLetters.size+'/3 · '+R(vol)+' kg';
 
   const pw2=$('#profile-warn');if(pw2)pw2.style.display=DB.profileSet?'none':'flex';
+  const bw=$('#backup-warn');
+  if(bw){const due=backupDue();bw.style.display=due?'flex':'none';
+    if(due)bw.innerHTML=`💾 <span style="flex:1;min-width:170px"><b>Sauvegarde recommandée</b> — vider le cache du navigateur effacerait tout. ${DB.lastExport?'Dernière sauvegarde il y a '+daysSinceExport()+' jours.':'Jamais sauvegardé.'}</span><button class="btn ghost mini" onclick="exportData()">Sauvegarder</button><button class="btn ghost mini" onclick="snoozeBackup()">Plus tard</button>`}
 
   const tips=["Bois un shake gainer entre deux repas si tu peines à finir tes assiettes.","+1 c.à.s d'huile d'olive = +135 kcal sans volume dans l'estomac.","7-9h de sommeil : c'est là que le muscle se construit.","Limite le cardio à 1-2×20 min/sem pour préserver ton surplus.","Pèse-toi le matin à jeun, même jour, pour un suivi fiable.","Stagnation 2 semaines ? +150 kcal/jour.","Priorise les glucides autour de l'entraînement.","Applique les charges conseillées (vertes) : c'est ta surcharge progressive."];
   $('#home-tip').textContent=tips[new Date().getDate()%tips.length];
@@ -1033,7 +1066,13 @@ function renderWeekStrip(){
   $('#phase-pill').textContent=WEEKS[wk].deload?'🛌 '+WEEKS[wk].ph:WEEKS[wk].ph;
   $('#week-phase-lbl').textContent='Sem. '+(wk+1)+'/12 · '+WEEKS[wk].int;
   const preview=(wk!==pw)?` · <span style="color:var(--amber)">prévisualisation — tape la sem. ${pw+1} pour revenir</span>`:'';
-  $('#week-scheme').innerHTML=WEEKS[wk].note+preview;
+  const cw=calendarWeek(),tw=trainingWeek();
+  const paced=(tw<cw)?`<br><span class="small muted">Cadencé sur tes séances : ${sessionsDone()} validée${sessionsDone()>1?'s':''}. Le calendrier serait à la semaine ${cw+1} — le programme t'attend.</span>`:'';
+  $('#week-scheme').innerHTML=WEEKS[wk].note+preview+paced;
+  const rb=$('#resume-bar'),dsl=daysSinceLastSession();
+  if(isComeback()){rb.style.display='flex';
+    rb.innerHTML=`🔁 <span style="flex:1;min-width:170px"><b>Reprise après ${dsl} jours</b> — on repart en semaine ${pw+1} et les charges conseillées sont allégées de 10 %.</span>`}
+  else rb.style.display='none';
   const doneWeeks=new Set(Object.keys(DB.workoutLog).map(k=>clamp(Math.floor((new Date(k)-new Date(DB.startDate))/864e5/7),0,11)));
   $('#wk-strip').innerHTML=WEEKS.map((W,i)=>`<div class="wkbox ${i===wk?'on':''} ${W.deload?'deload':''} ${doneWeeks.has(i)&&i<pw?'done':''}" onclick="setWeek(${i})"><b>${i+1}${i===pw?' •':''}</b><small>${W.deload?'deload':W.ph.slice(0,6)}</small></div>`).join('');
 }
@@ -1077,7 +1116,7 @@ function renderExos(){
     const e=exDef(id),tSets=targetSets(id,wk),tReps=targetReps(id,wk),reco=recoWeight(id,wk),prev=last[id];
     const isTime=e.time;const done=todayLog&&todayLog[id];
     const prevTxt=done?`✅ Fait aujourd'hui — appuie pour modifier`:(prev?`Dernière : ${prev.map(s=>(s.w?s.w+'kg×':'')+s.r+(isTime?'s':'')).join(', ')}`:'Première fois');
-    const recoTxt=reco!=null?`<div class="reco">✅ Charge conseillée : <b>${reco} kg</b> ${WEEKS[wk].deload?'(deload)':(DB.exoState[id]&&DB.exoState[id].hitTop?'· +'+inc(e.role)+'kg, tu as validé la dernière fois !':'· maintiens et vise le haut des reps')}</div>`:'';
+    const recoTxt=reco!=null?`<div class="reco">✅ Charge conseillée : <b>${reco} kg</b> ${WEEKS[wk].deload?'(deload)':(isComeback()?'· reprise après pause, −10 % pour retrouver le geste':(DB.exoState[id]&&DB.exoState[id].hitTop?'· +'+inc(e.role)+'kg, tu as validé la dernière fois !':'· maintiens et vise le haut des reps'))}</div>`:'';
     // sets: use logged today if present, else target count
     const logged=done?todayLog[id]:null;const dr=draft?draft[id]:null;
     const nSets=dr?dr.length:(logged?logged.length:tSets);
@@ -1236,9 +1275,28 @@ function saveWorkout(){
 /* rest timer */
 let restInt=null,restEnd=0,restDone=false;
 function restLeftSec(){return Math.max(0,Math.round((restEnd-Date.now())/1000))}
-function startRest(sec,label){restEnd=Date.now()+sec*1000;restDone=false;$('#rest-lab').textContent='Repos · '+label;$('#rest').classList.add('show');document.body.classList.add('resting');updRest();clearInterval(restInt);restInt=setInterval(updRest,250)}
-function updRest(){const left=restLeftSec();const m=Math.floor(left/60),s=left%60;$('#rest-t').textContent=m+':'+String(s).padStart(2,'0');if(left<=0&&!restDone){restDone=true;beep();$('#rest-lab').textContent='Repos terminé ! Série suivante 💪';setTimeout(stopRest,2500)}}
-function stopRest(){clearInterval(restInt);$('#rest').classList.remove('show');document.body.classList.remove('resting')}
+let restLabel='';
+function startRest(sec,label){restEnd=Date.now()+sec*1000;restDone=false;restLabel=label||'';
+  DB.rest={end:restEnd,label:restLabel};save();
+  $('#rest-lab').textContent='Repos · '+label;$('#rest').classList.add('show');document.body.classList.add('resting');updRest();clearInterval(restInt);restInt=setInterval(updRest,250)}
+function resumeRest(){const r=DB.rest;if(!r||!r.end||r.end<=Date.now()){if(DB.rest){DB.rest=null;save()}return}
+  restEnd=r.end;restLabel=r.label||'';restDone=false;
+  $('#rest-lab').textContent='Repos · '+restLabel;$('#rest').classList.add('show');document.body.classList.add('resting');updRest();clearInterval(restInt);restInt=setInterval(updRest,250)}
+function notifSupported(){return typeof window!=='undefined'&&'Notification' in window}
+function notifState(){return notifSupported()?Notification.permission:'unsupported'}
+function updNotifUI(){const b=$('#notif-toggle'),st=$('#notif-state');if(!b||!st)return;
+  const p=notifState();
+  if(p==='unsupported'){b.style.display='none';st.textContent='Non pris en charge par ce navigateur.';return}
+  b.style.display='';
+  if(p==='granted'){b.textContent='Activée ✓';b.disabled=true;st.textContent='Tu seras prévenu à la fin de chaque repos.'}
+  else if(p==='denied'){b.textContent='Bloquée';b.disabled=true;st.textContent='Autorise les notifications dans les réglages du navigateur.'}
+  else{b.textContent='Activer';b.disabled=false;st.textContent='Être prévenu même si l\'app est en arrière-plan.'}}
+function notifyRestDone(){
+  try{if(navigator.vibrate)navigator.vibrate([180,90,180])}catch(e){}
+  try{if(notifState()==='granted'&&document.hidden)new Notification('Repos terminé 💪',{body:restLabel?'Série suivante · '+restLabel:'Série suivante',tag:'ectomass-rest',icon:'icon-192.png'})}catch(e){}}
+function updRest(){const left=restLeftSec();const m=Math.floor(left/60),s=left%60;$('#rest-t').textContent=m+':'+String(s).padStart(2,'0');
+  if(left<=0&&!restDone){restDone=true;beep();notifyRestDone();$('#rest-lab').textContent='Repos terminé ! Série suivante 💪';setTimeout(stopRest,2500)}}
+function stopRest(){clearInterval(restInt);$('#rest').classList.remove('show');document.body.classList.remove('resting');if(DB.rest){DB.rest=null;save()}}
 function beep(){try{const a=new (window.AudioContext||window.webkitAudioContext)();const o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(0.001,a.currentTime);g.gain.exponentialRampToValueAtTime(0.3,a.currentTime+0.02);g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.5);o.start();o.stop(a.currentTime+0.5)}catch(e){}}
 
 /* plate calc */
@@ -1386,10 +1444,11 @@ function openSwap(pos,slot,di){di=(di==null?todayDI():di);swapCtx={di,pos,slot};
   $('#swap-modal').classList.add('show');}
 function doSwap(idx){if(!DB.plan.overrides)DB.plan.overrides={};DB.plan.overrides[swapCtx.di+':'+swapCtx.pos]=idx;save();$('#swap-modal').classList.remove('show');
   if($('#plan-week-view')&&$('#plan-week-view').style.display!=='none')renderWeekPlan();else renderPlan();
-  const el=$('#shopping-list'),el2=$('#week-shopping-list');
-  if(el&&el.style.display!=='none')renderShoppingInto('shopping-list',[planDishes()],'Aujourd\'hui · '+DAY_NAMES[todayDI()]);
-  if(el2&&el2.style.display!=='none')renderShoppingInto('week-shopping-list',weekDays(),'7 jours');
+  refreshShopping();
   toast('Plat remplacé ✓')}
+function refreshShopping(){if(!$('#shop-modal').classList.contains('show'))return;
+  const week=$('#plan-week-view')&&$('#plan-week-view').style.display!=='none';
+  SHOP.days=week?weekDays():[planDishes()];SHOP.label=week?'7 jours':dayShopLabel();paintShopping()}
 const SHOP_MAP={"poulet":"Protéines","bœuf":"Protéines","boeuf":"Protéines","dinde":"Protéines","œuf":"Protéines","oeuf":"Protéines","tofu":"Protéines","jambon":"Protéines","whey":"Protéines","steak":"Protéines",
   "riz":"Féculents & pains","pâtes":"Féculents & pains","pates":"Féculents & pains","pain":"Féculents & pains","avoine":"Féculents & pains","quinoa":"Féculents & pains","patate":"Féculents & pains","pomme de terre":"Féculents & pains","lentille":"Féculents & pains","pois chiche":"Féculents & pains","haricots":"Féculents & pains","tortilla":"Féculents & pains","nouilles":"Féculents & pains","granola":"Féculents & pains","crackers":"Féculents & pains","purée":"Féculents & pains","maïs":"Féculents & pains",
   "lait":"Produits laitiers","skyr":"Produits laitiers","yaourt":"Produits laitiers","fromage":"Produits laitiers","emmental":"Produits laitiers","parmesan":"Produits laitiers","cottage":"Produits laitiers","cheddar":"Produits laitiers","crème":"Produits laitiers","creme":"Produits laitiers",
@@ -1406,20 +1465,32 @@ function buildShoppingCats(dayList){
   });
   return cats;
 }
-let SHOP={elId:null,days:null,label:''};
-function renderShoppingInto(elId,dayList,label){SHOP={elId,days:dayList,label};paintShopping();}
+let SHOP={days:null,label:''};
+function openShopping(dayList,label){SHOP={days:dayList,label};$('#shop-modal').classList.add('show');paintShopping()}
+function shopChecked(){return DB.plan.checked||(DB.plan.checked=[])}
+function toggleShop(key){const c=shopChecked();const i=c.indexOf(key);if(i>=0)c.splice(i,1);else c.push(key);save();paintShopping()}
+function clearChecked(){DB.plan.checked=[];save();paintShopping()}
 function paintShopping(){
-  const {elId,days,label}=SHOP;const cats=buildShoppingCats(days);const removed=DB.plan.removed||[];let anyRemoved=false;
-  let html=`<div class="card"><div class="between" style="margin-bottom:12px"><b>Liste de courses <span class="small muted">· ${label}</span></b><button class="btn ghost mini" onclick="copyShopping()">📋 Copier</button></div>`;
-  for(const cat in cats){const items=Object.values(cats[cat]);const shown=items.filter(it=>!removed.includes(it.key));if(items.length!==shown.length)anyRemoved=true;if(!shown.length)continue;
-    html+=`<div style="margin-bottom:12px"><b class="small" style="color:var(--accent2)">${cat.toUpperCase()}</b>`
-      +shown.map(it=>`<div class="ing"><span>${it.name}</span><span class="center" style="gap:12px"><span class="small mono" style="color:var(--accent2)">${it.num?fmtQty(it.num,it.unit):it.unit}</span><button class="del" aria-label="Retirer ${it.name} de la liste" style="font-size:15px" onclick="removeShop('${it.key.replace(/'/g,"\\'")}')">✕</button></span></div>`).join('')+'</div>'}
-  html+=(anyRemoved?`<button class="btn ghost mini" onclick="clearRemoved()" style="margin-bottom:8px">↺ Réafficher les éléments retirés</button><br>`:'')
-    +'<div class="small muted">Quantités totales pour la période. Appuie sur ✕ pour retirer ce que tu as déjà.</div></div>';
-  $('#'+elId).innerHTML=html;
+  if(!SHOP.days)return;
+  const {days,label}=SHOP;const cats=buildShoppingCats(days);const removed=DB.plan.removed||[];const chk=shopChecked();
+  let anyRemoved=false,total=0,done=0,html='';
+  for(const cat in cats){const items=Object.values(cats[cat]);const shown=items.filter(it=>!removed.includes(it.key));
+    if(items.length!==shown.length)anyRemoved=true;if(!shown.length)continue;
+    html+=`<div class="shop-cat">${cat.toUpperCase()}</div>`;
+    html+=shown.map(it=>{const on=chk.includes(it.key);total++;if(on)done++;
+      const k=it.key.replace(/'/g,"\\'");
+      return `<div class="shop-row ${on?'checked':''}" onclick="toggleShop('${k}')"><span class="cbox">✓</span><span class="nm">${it.name}</span><span class="center" style="gap:8px"><span class="small mono" style="color:var(--accent2)">${it.num?fmtQty(it.num,it.unit):it.unit}</span><button class="del" aria-label="Retirer ${it.name} définitivement" style="font-size:15px" onclick="event.stopPropagation();removeShop('${k}')">✕</button></span></div>`}).join('')}
+  const head=`<div class="between" style="margin-bottom:10px"><span class="small muted">${label} · <b style="color:var(--txt)">${done}/${total}</b> pris</span><button class="btn ghost mini" onclick="copyShopping()">📋 Copier</button></div>`
+    +`<div class="mbar" style="margin-bottom:6px"><i style="width:${total?done/total*100:0}%;background:var(--green);transition:width .4s var(--ease)"></i></div>`;
+  const foot=`<div class="row wrap" style="gap:8px;margin-top:14px">`
+    +(done?`<button class="btn ghost mini" onclick="clearChecked()">↺ Tout décocher</button>`:'')
+    +(anyRemoved?`<button class="btn ghost mini" onclick="clearRemoved()">↺ Réafficher les retirés</button>`:'')
+    +`</div><div class="small muted" style="margin-top:10px">Touche une ligne pour cocher ce que tu as mis dans le panier. Le ✕ retire l'article de toutes tes listes.</div>`;
+  $('#shop-body').innerHTML=head+html+foot;
 }
-function shoppingText(){const cats=buildShoppingCats(SHOP.days);const removed=DB.plan.removed||[];const lines=['🛒 Liste de courses — '+SHOP.label,''];
-  for(const cat in cats){const items=Object.values(cats[cat]).filter(it=>!removed.includes(it.key));if(!items.length)continue;lines.push(cat.toUpperCase());items.forEach(it=>lines.push('- '+it.name+' : '+(it.num?fmtQty(it.num,it.unit):it.unit)));lines.push('')}
+function shoppingText(){const cats=buildShoppingCats(SHOP.days);const removed=DB.plan.removed||[];const chk=shopChecked();const lines=['🛒 Liste de courses — '+SHOP.label,''];
+  for(const cat in cats){const items=Object.values(cats[cat]).filter(it=>!removed.includes(it.key));if(!items.length)continue;lines.push(cat.toUpperCase());
+    items.forEach(it=>lines.push((chk.includes(it.key)?'[x] ':'- ')+it.name+' : '+(it.num?fmtQty(it.num,it.unit):it.unit)));lines.push('')}
   return lines.join('\n');}
 function copyShopping(){const txt=shoppingText();if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(()=>toast('Liste copiée 📋')).catch(()=>fallbackCopy(txt))}else fallbackCopy(txt)}
 function fallbackCopy(txt){const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');toast('Liste copiée 📋')}catch(e){toast('Copie non supportée')}ta.remove()}
@@ -1485,6 +1556,9 @@ function setLift(id){currentLift=id;renderProgress()}
 
 /* ---------------- RENDER: PROFILE ---------------- */
 function renderProfile(){
+  const bs=$('#backup-state');
+  if(bs)bs.textContent=DB.lastExport?('Dernière sauvegarde il y a '+daysSinceExport()+' jour'+(daysSinceExport()>1?'s':'')):'Jamais sauvegardé — tes données ne vivent que dans ce navigateur.';
+  updNotifUI();
   const p=DB.profile;$('#pf-age').value=p.age;$('#pf-height').value=p.height;$('#pf-weight').value=p.weight;$('#pf-activity').value=p.activity;$('#pf-surplus').value=p.surplus;$('#pf-meals').value=p.meals;
   $$('#pf-sex button').forEach(b=>b.classList.toggle('on',b.dataset.v===p.sex));
   const t=targets();
@@ -1516,7 +1590,8 @@ window.addEventListener('popstate',e=>{
 });
 $$('#session-seg button').forEach(b=>b.onclick=()=>selectSession(b.dataset.s));
 $('#save-workout').onclick=saveWorkout;$('#reset-workout').onclick=()=>{$$('#exo-list .in-w,#exo-list .in-r').forEach(i=>i.value='');$$('#exo-list [data-e1]').forEach(e=>e.textContent='—');$$('#exo-list .done').forEach(b=>{b.classList.remove('on');b.classList.add('locked')});clearDraft(currentSession);updateDraftBar();stopRest();toast('Champs vidés')};
-$('#rest-skip').onclick=stopRest;$('#rest-m15').onclick=()=>{restEnd=Math.max(Date.now()+1000,restEnd-15000);updRest()};$('#rest-p15').onclick=()=>{restEnd+=15000;restDone=false;updRest()};
+$('#rest-skip').onclick=stopRest;$('#rest-m15').onclick=()=>{restEnd=Math.max(Date.now()+1000,restEnd-15000);DB.rest={end:restEnd,label:restLabel};save();updRest()};
+$('#rest-p15').onclick=()=>{restEnd+=15000;restDone=false;DB.rest={end:restEnd,label:restLabel};save();updRest()};
 $('#plate-btn').onclick=()=>{$('#plate-modal').classList.add('show');renderPlate()};$('#close-plate').onclick=()=>$('#plate-modal').classList.remove('show');
 $('#plate-total').oninput=renderPlate;$('#plate-bar').oninput=renderPlate;
 
@@ -1533,23 +1608,25 @@ $$('#food-seg button').forEach(b=>b.onclick=()=>setFoodTab(b.dataset.f));
 $('#food-prev').onclick=()=>{const d=new Date(currentFoodDate);d.setDate(d.getDate()-1);currentFoodDate=todayKey(d);renderFoodLog()};
 $('#food-next').onclick=()=>{const d=new Date(currentFoodDate);d.setDate(d.getDate()+1);const nk=todayKey(d);if(nk<=todayKey()){currentFoodDate=nk;renderFoodLog()}};
 function dayShopLabel(){return "Aujourd'hui · "+DAY_NAMES[todayDI()]}
-$('#regen-plan').onclick=()=>{const di=todayDI();if(!DB.plan.daySeed)DB.plan.daySeed={};DB.plan.daySeed[di]=(DB.plan.daySeed[di]||0)+1;save();renderPlan();
-  const el=$('#shopping-list');if(el.style.display!=='none'){renderShoppingInto('shopping-list',[planDishes()],dayShopLabel())}
+$('#regen-plan').onclick=()=>{const di=todayDI();if(!DB.plan.daySeed)DB.plan.daySeed={};DB.plan.daySeed[di]=(DB.plan.daySeed[di]||0)+1;save();renderPlan();refreshShopping();
   const kept=overrideKeys(di).length;toast(kept?'Nouveaux plats · '+kept+' choix conservé'+(kept>1?'s':''):'Nouvelle journée 🍽️')};
 $('#reset-choices').onclick=()=>{const di=todayDI();if(!overrideKeys(di).length)return;
   if(!confirm('Annuler tes échanges de plats pour aujourd\'hui ?'))return;
-  resetChoices(di);renderPlan();const el=$('#shopping-list');if(el.style.display!=='none'){renderShoppingInto('shopping-list',[planDishes()],dayShopLabel())}toast('Choix annulés')};
-$('#show-shopping').onclick=()=>{const el=$('#shopping-list');if(el.style.display==='none'){renderShoppingInto('shopping-list',[planDishes()],dayShopLabel());el.style.display='block';$('#show-shopping').textContent='🛒 Masquer la liste'}else{el.style.display='none';$('#show-shopping').textContent='🛒 Liste de courses (jour)'}};
-$('#regen-week').onclick=()=>{DB.plan.seed++;DB.plan.daySeed={};save();renderWeekPlan();const el=$('#week-shopping-list');if(el.style.display!=='none'){renderShoppingInto('week-shopping-list',weekDays(),'7 jours')}
+  resetChoices(di);renderPlan();refreshShopping();toast('Choix annulés')};
+$('#show-shopping').onclick=()=>openShopping([planDishes()],dayShopLabel());
+$('#close-shop').onclick=()=>$('#shop-modal').classList.remove('show');
+$('#regen-week').onclick=()=>{DB.plan.seed++;DB.plan.daySeed={};save();renderWeekPlan();refreshShopping();
   const kept=overrideKeys().length;toast(kept?'Semaine régénérée · '+kept+' choix conservé'+(kept>1?'s':''):'Semaine régénérée 📅')};
 $('#reset-choices-week').onclick=()=>{if(!overrideKeys().length)return;
   if(!confirm('Annuler tous tes échanges de plats de la semaine ?'))return;
-  resetChoices(null);renderWeekPlan();const el=$('#week-shopping-list');if(el.style.display!=='none'){renderShoppingInto('week-shopping-list',weekDays(),'7 jours')}toast('Choix annulés')};
-$('#show-week-shopping').onclick=()=>{const el=$('#week-shopping-list');if(el.style.display==='none'){renderShoppingInto('week-shopping-list',weekDays(),'7 jours');el.style.display='block';$('#show-week-shopping').textContent='🛒 Masquer la liste'}else{el.style.display='none';$('#show-week-shopping').textContent='🛒 Liste de courses de la semaine'}};
+  resetChoices(null);renderWeekPlan();refreshShopping();toast('Choix annulés')};
+$('#show-week-shopping').onclick=()=>openShopping(weekDays(),'7 jours');
 $('#close-swap').onclick=()=>$('#swap-modal').classList.remove('show');
 $('#water-add').onclick=()=>changeWater(250);$('#water-sub').onclick=()=>changeWater(-250);
 
 ['pf-age','pf-height','pf-weight','pf-activity','pf-surplus','pf-meals'].forEach(id=>$('#'+id).addEventListener('change',saveProfile));
+$('#notif-toggle').onclick=()=>{if(!notifSupported())return;
+  try{Notification.requestPermission().then(()=>{updNotifUI();if(Notification.permission==='granted')toast('Alerte activée 🔔')})}catch(e){updNotifUI()}};
 $$('#pf-sex button').forEach(b=>b.onclick=()=>{DB.profile.sex=b.dataset.v;$$('#pf-sex button').forEach(x=>x.classList.toggle('on',x===b));saveProfile()});
 
 $('#log-weight').onclick=()=>{const v=parseFloat($('#weight-input').value);if(isNaN(v)){toast('Poids invalide');return}const k=todayKey();DB.weightLog=DB.weightLog.filter(x=>x.date!==k);DB.weightLog.push({date:k,w:v});DB.weightLog.sort((a,b)=>a.date.localeCompare(b.date));DB.profile.weight=v;DB.profileSet=true;save();$('#weight-input').value='';renderProgress();renderProfile();renderHome();toast('Poids enregistré 📈')};
@@ -1580,7 +1657,27 @@ $('#mf-create').onclick=()=>{const name=$('#mf-name').value.trim()||'Aliment';co
   ['mf-name','mf-kcal','mf-p','mf-c','mf-f'].forEach(i=>$('#'+i).value='');
   openEditor(food,null)};
 
-$('#export-data').onclick=()=>{const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ectomass-data.json';a.click()};
+function daysSinceExport(){const t=DB.lastExport;const base=t?t:new Date(DB.startDate+'T00:00').getTime();return Math.floor((Date.now()-base)/864e5)}
+function hasData(){return Object.keys(DB.workoutLog).length>0||(DB.weightLog||[]).length>0}
+function backupDue(){if(!hasData())return false;if(Date.now()-(DB.backupSnooze||0)<7*864e5)return false;return daysSinceExport()>=30}
+function snoozeBackup(){DB.backupSnooze=Date.now();save();renderHome();toast('Rappel dans 7 jours')}
+function exportData(){
+  const json=JSON.stringify(DB,null,2),name='ectomass-'+todayKey()+'.json';
+  DB.lastExport=Date.now();save();
+  try{
+    if(navigator.share&&navigator.canShare){
+      const file=new File([json],name,{type:'application/json'});
+      if(navigator.canShare({files:[file]})){
+        navigator.share({files:[file],title:'Sauvegarde EctoMass'}).then(()=>toast('Sauvegarde partagée ✓')).catch(()=>{});
+        renderProfile();renderHome();return}
+    }
+  }catch(e){}
+  const blob=new Blob([json],{type:'application/json'});const a=document.createElement('a');const url=URL.createObjectURL(blob);
+  a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),4000);
+  toast('Sauvegarde enregistrée ✓');renderProfile();renderHome();
+}
+$('#export-data').onclick=exportData;
+$('#backup-now').onclick=exportData;
 $('#import-data').onclick=()=>$('#import-file').click();
 $('#import-file').onchange=e=>{const file=e.target.files[0];if(!file)return;const rd=new FileReader();rd.onload=()=>{try{const parsed=JSON.parse(rd.result);
   if(!parsed||typeof parsed!=='object'||Array.isArray(parsed)||typeof parsed.profile!=='object')throw new Error('bad');
@@ -1628,7 +1725,7 @@ document.addEventListener('keydown',e=>{
 $$('.modal').forEach(m=>{const obs=new MutationObserver(()=>{if(m.classList.contains('show')){lastFocus=document.activeElement;const f=m.querySelector('input,select,button');f&&setTimeout(()=>f.focus&&f.focus(),60)}else{lastFocus&&lastFocus.focus&&lastFocus.focus()}});obs.observe(m,{attributes:true,attributeFilter:['class']})});
 
 // expose
-Object.assign(window,{go,selectSession,setWeek,toggleDone,discardDraft,setFoodTab,openExo,setWater,delFood,openSwap,doSwap,setLift,removeShop,clearRemoved,copyShopping,openAddFood,openEditFood,pickFoodByName,pickRecent,setQty,setMeal,addPlanMealToJournal,addPlanDayToJournal,openExoPicker,pickExo,removeExo,resetSession,addSetRow,toggleWarm,deleteSession,openOnboarding});
+Object.assign(window,{go,selectSession,setWeek,toggleDone,discardDraft,setFoodTab,openExo,setWater,toggleShop,clearChecked,exportData,snoozeBackup,delFood,openSwap,doSwap,setLift,removeShop,clearRemoved,copyShopping,openAddFood,openEditFood,pickFoodByName,pickRecent,setQty,setMeal,addPlanMealToJournal,addPlanDayToJournal,openExoPicker,pickExo,removeExo,resetSession,addSetRow,toggleWarm,deleteSession,openOnboarding});
 /* état initial : respecte le hash pour pouvoir ouvrir/recharger directement un onglet */
 (function initRoute(){
   const h=(location.hash||'').replace('#','');
@@ -1637,7 +1734,7 @@ Object.assign(window,{go,selectSession,setWeek,toggleDone,discardDraft,setFoodTa
   currentPage=p;
   if(p!=='home')go(p,true);
 })();
-renderHome();renderProfile();
+renderHome();renderProfile();resumeRest();
 if(IS_FIRST_RUN)openOnboarding();
 </script>
 </body>
