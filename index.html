@@ -119,8 +119,11 @@ button:focus-visible,.snav:focus-visible,.chip:focus-visible,.wkbox:focus-visibl
 .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
 .dash{grid-template-columns:1.15fr .85fr}
 @media(max-width:860px){.dash{grid-template-columns:1fr}.g2.mstack{grid-template-columns:1fr}}
-.row{display:flex;gap:10px}.row.wrap{flex-wrap:wrap}.between{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.center{display:flex;align-items:center;gap:10px}
+.row{display:flex;gap:10px}.row.wrap{flex-wrap:wrap}.between{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.center{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.between>*,.center>*{min-width:0}
+@media(max-width:400px){.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr}}
+@media(max-width:360px){.page{padding:12px}.center{gap:12px}}
 
 .btn{position:relative;overflow:hidden;background:var(--accg);color:#160a03;font-weight:750;padding:13px 16px;border-radius:12px;width:100%;font-size:15px;
   box-shadow:var(--glow),inset 0 1px 0 rgba(255,255,255,.3);
@@ -134,8 +137,8 @@ button:focus-visible,.snav:focus-visible,.chip:focus-visible,.wkbox:focus-visibl
 @media(hover:hover){.btn.ghost:hover{background:var(--card3);border-color:#3b4a68;filter:none;box-shadow:var(--sh2)}
   .btn.ghost:hover::after{left:140%}}
 .btn.ghost::after{background:linear-gradient(100deg,transparent,rgba(255,255,255,.09),transparent)}
-.btn.sm{padding:9px 13px;font-size:13px;width:auto}
-.btn.mini{padding:6px 11px;font-size:12px;width:auto;border-radius:9px}
+.btn.sm{padding:9px 13px;font-size:13px;width:auto;min-height:44px}
+.btn.mini{padding:6px 11px;font-size:12px;width:auto;border-radius:9px;min-height:44px;min-width:44px}
 .chip{display:inline-flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--line2);border-radius:20px;padding:6px 12px;font-size:12.5px;font-weight:650;color:var(--muted);
   transition:transform .24s var(--spring),background .22s,color .22s,border-color .22s,box-shadow .24s}
 @media(hover:hover){.chip:hover{border-color:#3d4c6b;color:var(--txt);transform:translateY(-1px)}}
@@ -149,12 +152,12 @@ button:focus-visible,.snav:focus-visible,.chip:focus-visible,.wkbox:focus-visibl
 
 label.field{display:block;margin-bottom:12px}
 label.field span{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600}
-input[type=number],input[type=text],select{width:100%;background:var(--bg2);border:1px solid var(--line2);color:var(--txt);border-radius:11px;padding:12px 13px;outline:none;
+input[type=number],input[type=text],select{width:100%;background:var(--bg2);border:1px solid var(--line2);color:var(--txt);border-radius:11px;padding:12px 13px;outline:none;min-height:44px;
   transition:border-color .2s,box-shadow .25s,background .2s}
 @media(hover:hover){input[type=number]:hover,input[type=text]:hover,select:hover{border-color:#3b4a68}}
 input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,107,53,.16);background:#0c111a}
 .seg{display:flex;background:var(--bg2);border:1px solid var(--line2);border-radius:11px;overflow:hidden}
-.seg button{flex:1;padding:11px 6px;color:var(--muted);font-weight:650;font-size:13px;transition:color .22s,background .3s var(--ease),box-shadow .3s}
+.seg button{flex:1;padding:11px 6px;color:var(--muted);font-weight:650;font-size:13px;min-height:44px;transition:color .22s,background .3s var(--ease),box-shadow .3s}
 @media(hover:hover){.seg button:hover{color:var(--txt);background:rgba(255,255,255,.04)}}
 .seg button.on{background:var(--accg);color:#160a03;box-shadow:0 4px 14px -6px rgba(255,107,53,.7)}
 .segline{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;-ms-overflow-style:none;scrollbar-width:none}
@@ -241,11 +244,11 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(25
 .mealgrp .gh{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:0 2px}
 .mealgrp .gh b{font-size:13.5px}
 .mealgrp .gh .sub{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
-.mealgrp .addbtn{font-size:20px;color:var(--accent2);font-weight:700;line-height:1;padding:0 6px;transition:transform .3s var(--spring)}
+.mealgrp .addbtn{font-size:20px;color:var(--accent2);font-weight:700;line-height:1;padding:0 6px;min-width:44px;min-height:44px;transition:transform .3s var(--spring)}
 .mealgrp .addbtn:hover{transform:rotate(90deg) scale(1.1)}
 .chip.msel{cursor:pointer}
 #fm-quick .chip,#fm-meal .chip{cursor:pointer}
-.del{color:var(--red);font-size:18px;padding:8px 10px;line-height:1;min-height:40px;transition:transform .25s var(--spring),opacity .2s;opacity:.75}
+.del{color:var(--red);font-size:18px;padding:8px 10px;line-height:1;min-height:44px;min-width:44px;transition:transform .25s var(--spring),opacity .2s;opacity:.75}
 .del:hover{opacity:1;transform:scale(1.15)}
 .empty{text-align:center;color:var(--muted);padding:26px 10px}
 .empty .ico{font-size:34px;margin-bottom:8px;animation:float 3.4s ease-in-out infinite}
@@ -307,6 +310,15 @@ canvas{width:100%;display:block}
   box-shadow:0 14px 34px -10px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.12) inset}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px) scale(1)}
 hr{border:none;border-top:1px solid var(--line2);margin:14px 0}
+
+/* brouillon de séance */
+#draft-bar{display:none;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  background:linear-gradient(135deg,rgba(49,197,109,.13),rgba(49,197,109,.03));border:1px solid rgba(49,197,109,.3);
+  border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:13px}
+#draft-bar b{color:var(--green)}
+.setrow .done.locked{opacity:.38}
+.empty-chart{text-align:center;color:var(--muted);font-size:13px;padding:22px 10px 18px}
+.empty-chart .ico{font-size:30px;margin-bottom:6px}
 
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -386,6 +398,7 @@ hr{border:none;border-top:1px solid var(--line2);margin:14px 0}
       <div class="seg" id="session-seg" style="margin:12px 0"><button data-s="A" class="on">Séance A</button><button data-s="B">Séance B</button><button data-s="C">Séance C</button></div>
 
       <div class="tip" style="margin-bottom:14px"><span class="i">🎯</span><div id="session-tip"></div></div>
+      <div id="draft-bar"><span>💾 <b>Séance en cours</b> — sauvegarde auto</span><button class="btn ghost mini" onclick="discardDraft()">Vider</button></div>
       <div id="exo-list"></div>
 
       <div class="row" style="margin:8px 0">
@@ -398,7 +411,7 @@ hr{border:none;border-top:1px solid var(--line2);margin:14px 0}
     <!-- ============ FOOD ============ -->
     <section class="page" id="page-food">
       <h1>Nutrition</h1>
-      <div class="seg" id="food-seg" style="margin-bottom:14px"><button data-f="log" class="on">Journal</button><button data-f="plan">Générateur repas</button></div>
+      <div class="seg" id="food-seg" style="margin-bottom:14px"><button data-f="log" class="on">Journal</button><button data-f="plan">Menus</button><button data-f="week">Semaine</button></div>
 
       <div id="food-log-view">
         <div class="between" style="margin-bottom:12px">
@@ -422,8 +435,6 @@ hr{border:none;border-top:1px solid var(--line2);margin:14px 0}
       </div>
 
       <div id="food-plan-view" style="display:none">
-        <div class="seg" id="plan-seg" style="margin-bottom:14px"><button data-pl="day" class="on">Journée</button><button data-pl="week">Semaine</button></div>
-
         <div id="plan-day-view">
           <div class="tip" style="margin-bottom:14px"><span class="i">🍽️</span><div>Journée composée automatiquement pour <b id="plan-target">—</b> kcal · <span id="plan-meals-n">5</span> prises · sans poisson ni fruits de mer. Échange chaque plat qui ne te plaît pas.</div></div>
           <div class="between" style="margin-bottom:12px"><b>Menu généré</b><button class="btn ghost sm" id="regen-plan">↻ Nouvelle journée</button></div>
@@ -450,7 +461,8 @@ hr{border:none;border-top:1px solid var(--line2);margin:14px 0}
         <div class="card">
           <div class="between" style="margin-bottom:6px"><h3 style="margin:0">Poids & tendance</h3><span class="pill" id="prog-latest">—</span></div>
           <canvas id="weight-chart" height="180"></canvas>
-          <div class="row" style="gap:14px;margin-top:6px;font-size:11px;color:var(--muted)"><span class="center" style="gap:5px"><span style="width:14px;height:3px;background:var(--accent);border-radius:2px;display:inline-block"></span>Poids réel</span><span class="center" style="gap:5px"><span style="width:14px;height:3px;background:var(--blue);border-radius:2px;display:inline-block;opacity:.8"></span>Tendance (moy. 7 j)</span></div>
+          <div class="empty-chart" id="weight-empty" style="display:none"></div>
+          <div class="row" id="weight-legend" style="gap:14px;margin-top:6px;font-size:11px;color:var(--muted)"><span class="center" style="gap:5px"><span style="width:14px;height:3px;background:var(--accent);border-radius:2px;display:inline-block"></span>Poids réel</span><span class="center" style="gap:5px"><span style="width:14px;height:3px;background:var(--blue);border-radius:2px;display:inline-block;opacity:.8"></span>Tendance (moy. 7 j)</span></div>
           <div class="row" style="margin-top:12px"><input type="number" id="weight-input" placeholder="Poids (kg)" step="0.1" inputmode="decimal"><button class="btn sm" id="log-weight" style="white-space:nowrap">Ajouter</button></div>
           <div class="small" id="prog-advice" style="margin-top:10px"></div>
         </div>
@@ -637,7 +649,7 @@ const capitalize=s=>s.charAt(0).toUpperCase()+s.slice(1);
 /* ---------------- DATA ---------------- */
 const DEFAULT={
   profile:{sex:'h',age:25,height:178,weight:65,activity:1.375,surplus:400,meals:5},
-  startDate:todayKey(), weightLog:[], workoutLog:{}, exoState:{}, foodLog:{}, plan:{seed:1,overrides:{},date:'',removed:[]}, view:{week:null}, recentFoods:[], customFoods:[], sessionPlan:{}, customExos:{}
+  startDate:todayKey(), weightLog:[], workoutLog:{}, exoState:{}, foodLog:{}, plan:{seed:1,overrides:{},date:'',removed:[]}, view:{week:null}, recentFoods:[], customFoods:[], sessionPlan:{}, customExos:{}, draft:null
 };
 let IS_FIRST_RUN=false;try{IS_FIRST_RUN=!localStorage.getItem('ectomass_v2')}catch(e){}
 let DB=load();
@@ -910,7 +922,7 @@ function setupCanvas(cv,h){const dpr=window.devicePixelRatio||1;const pw=cv.pare
 function lineChart(cv,series,opts={}){const {ctx,w,h}=setupCanvas(cv,opts.h||180);ctx.clearRect(0,0,w,h);if(!series.length)return;
   const pad={l:34,r:12,t:14,b:22};const ys=series.flatMap(s=>s.map(d=>d.v));let mn=Math.min(...ys),mx=Math.max(...ys);if(mn===mx){mn-=1;mx+=1}const rg=mx-mn;mn-=rg*0.15;mx+=rg*0.15;
   const n=Math.max(...series.map(s=>s.length));const X=i=>pad.l+(w-pad.l-pad.r)*(n<=1?0.5:i/(n-1));const Y=v=>pad.t+(h-pad.t-pad.b)*(1-(v-mn)/(mx-mn));
-  ctx.strokeStyle='#1e2636';ctx.lineWidth=1;ctx.fillStyle='#5c6a82';ctx.font='10px sans-serif';
+  ctx.strokeStyle='#1e2636';ctx.lineWidth=1;ctx.fillStyle='#8b99b3';ctx.font='10px sans-serif';
   for(let g=0;g<=3;g++){const val=mn+(mx-mn)*g/3,y=Y(val);ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();ctx.fillText(R(val,opts.dec??1),3,y+3)}
   const cols=opts.colors||['#ff6b35','#4c9dff'];
   series.forEach((data,si)=>{if(!data.length)return;const grad=ctx.createLinearGradient(0,0,w,0);grad.addColorStop(0,'#ff6b35');grad.addColorStop(1,'#ffa63d');
@@ -918,7 +930,7 @@ function lineChart(cv,series,opts={}){const {ctx,w,h}=setupCanvas(cv,opts.h||180
     ctx.beginPath();data.forEach((d,i)=>i?ctx.lineTo(X(i),Y(d.v)):ctx.moveTo(X(i),Y(d.v)));ctx.stroke();ctx.setLineDash([]);
     if(si===0){ctx.lineTo(X(data.length-1),h-pad.b);ctx.lineTo(X(0),h-pad.b);ctx.closePath();ctx.fillStyle='rgba(255,107,53,.08)';ctx.fill();}
     ctx.fillStyle=si===0?'#ff6b35':cols[si];data.forEach((d,i)=>{ctx.beginPath();ctx.arc(X(i),Y(d.v),si===0?3:2,0,7);ctx.fill()})});
-  ctx.fillStyle='#5c6a82';ctx.textAlign='center';const d0=series[0];if(d0.length){ctx.fillText(d0[0].l,X(0),h-6);if(d0.length>1)ctx.fillText(d0[d0.length-1].l,X(d0.length-1),h-6)}ctx.textAlign='left';}
+  ctx.fillStyle='#8b99b3';ctx.textAlign='center';const d0=series[0];if(d0.length){ctx.fillText(d0[0].l,X(0),h-6);if(d0.length>1)ctx.fillText(d0[d0.length-1].l,X(d0.length-1),h-6)}ctx.textAlign='left';}
 function barChart(cv,data,opts={}){const {ctx,w,h}=setupCanvas(cv,opts.h||180);ctx.clearRect(0,0,w,h);if(!data.length)return;
   const pad={l:8,r:8,t:14,b:34};const mx=Math.max(...data.map(d=>d.v))||1;const bw=(w-pad.l-pad.r)/data.length;
   data.forEach((d,i)=>{const bh=(h-pad.t-pad.b)*(d.v/mx);const x=pad.l+i*bw+bw*0.15,y=h-pad.b-bh,bwid=bw*0.7;
@@ -995,6 +1007,31 @@ function renderWeekStrip(){
 function setWeek(i){DB.view.week=(i===programWeek())?null:i;save();renderWeekStrip();renderExos();}
 function selectSession(s){currentSession=s;$$('#session-seg button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));renderExos();}
 function lastSessionData(sess){const keys=Object.keys(DB.workoutLog).filter(k=>DB.workoutLog[k].session===sess).sort();return keys.length?DB.workoutLog[keys[keys.length-1]].exos:{}}
+/* ---- Brouillon de séance : rien de saisi ne doit être perdu ---- */
+function getDraft(){const d=DB.draft;return (d&&d.date===todayKey())?d:null}
+function draftFor(sess){const d=getDraft();return (d&&d.s)?d.s[sess]:null}
+function collectSets(){const out={};
+  $$('#exo-list .exo').forEach(el=>{const rows=[];
+    $$('.setrow[data-exo]',el).forEach(r=>{const wi=$('.in-w',r),ri=$('.in-r',r),dn=$('.done',r);
+      rows.push({w:wi?wi.value:'',r:ri?ri.value:'',warm:r.getAttribute('data-warm')==='1'?1:0,done:(dn&&dn.classList.contains('on'))?1:0})});
+    out[el.dataset.id]=rows});
+  return out}
+let draftTimer=null;
+function saveDraft(){clearTimeout(draftTimer);draftTimer=setTimeout(()=>{
+  const s=(getDraft()&&DB.draft.s)?DB.draft.s:{};
+  s[currentSession]=collectSets();
+  DB.draft={date:todayKey(),s};save();updateDraftBar()},300)}
+function draftHasContent(sess){const d=draftFor(sess);if(!d)return false;
+  return Object.values(d).some(rows=>rows.some(x=>(x.w!==''&&x.w!=null)||(x.r!==''&&x.r!=null)||x.done))}
+function clearDraft(sess){if(!DB.draft)return;
+  if(sess&&DB.draft.s){delete DB.draft.s[sess];if(!Object.keys(DB.draft.s).length)DB.draft=null}else DB.draft=null;
+  save()}
+function updateDraftBar(){const bar=$('#draft-bar');if(!bar)return;
+  const saved=DB.workoutLog[todayKey()]&&DB.workoutLog[todayKey()].session===currentSession;
+  bar.style.display=(draftHasContent(currentSession)&&!saved)?'flex':'none'}
+function discardDraft(){if(!confirm('Effacer la saisie en cours de cette séance ?'))return;
+  clearDraft(currentSession);renderExos();toast('Saisie effacée')}
+
 function renderExos(){
   const S=SESSIONS[currentSession],wk=currentWeekIdx();const exos=sessionExos(currentSession);
   const edited=isCustomSession(currentSession);
@@ -1002,21 +1039,27 @@ function renderExos(){
   const last=lastSessionData(currentSession);
   // today's already-logged session (for editing)
   const todayLog=(DB.workoutLog[todayKey()]&&DB.workoutLog[todayKey()].session===currentSession)?DB.workoutLog[todayKey()].exos:null;
+  const draft=draftFor(currentSession);
   $('#exo-list').innerHTML=exos.map((id,idx)=>{
     const e=exDef(id),tSets=targetSets(id,wk),tReps=targetReps(id,wk),reco=recoWeight(id,wk),prev=last[id];
     const isTime=e.time;const done=todayLog&&todayLog[id];
     const prevTxt=done?`✅ Fait aujourd'hui — appuie pour modifier`:(prev?`Dernière : ${prev.map(s=>(s.w?s.w+'kg×':'')+s.r+(isTime?'s':'')).join(', ')}`:'Première fois');
     const recoTxt=reco!=null?`<div class="reco">✅ Charge conseillée : <b>${reco} kg</b> ${WEEKS[wk].deload?'(deload)':(DB.exoState[id]&&DB.exoState[id].hitTop?'· +'+inc(e.role)+'kg, tu as validé la dernière fois !':'· maintiens et vise le haut des reps')}</div>`:'';
     // sets: use logged today if present, else target count
-    const logged=done?todayLog[id]:null;const nSets=logged?logged.length:tSets;
+    const logged=done?todayLog[id]:null;const dr=draft?draft[id]:null;
+    const nSets=dr?dr.length:(logged?logged.length:tSets);
+    const cell=(si)=>{
+      if(dr&&dr[si])return{w:dr[si].w||'',r:dr[si].r||'',warm:dr[si].warm?1:0,done:dr[si].done?1:0};
+      if(logged&&logged[si])return{w:logged[si].w||'',r:logged[si].r||'',warm:logged[si].warm?1:0,done:1};
+      return{w:'',r:'',warm:0,done:0}};
     const sets=[...Array(nSets)].map((_,si)=>{
-      const lg=logged&&logged[si]?logged[si]:null;const warm=lg&&lg.warm;
+      const v=cell(si),warm=v.warm;
       return `<div class="setrow ${warm?'is-warm':''}" data-exo="${id}" data-set="${si}"${warm?' data-warm="1"':''}>
         <button class="sn ${warm?'warm':''}" onclick="toggleWarm(this)" title="Marquer échauffement">${warm?'W':si+1}</button>
-        ${isTime?'<div class="small muted" style="text-align:center">durée</div>':`<input type="number" inputmode="decimal" class="in-w" placeholder="${reco!=null?reco:'kg'}" value="${lg&&lg.w?lg.w:''}">`}
-        <input type="number" inputmode="numeric" class="in-r" placeholder="${isTime?tReps||'sec':tReps}" value="${lg&&lg.r?lg.r:''}">
+        ${isTime?'<div class="small muted" style="text-align:center">durée</div>':`<input type="number" inputmode="decimal" class="in-w" placeholder="${reco!=null?reco:'kg'}" value="${v.w}">`}
+        <input type="number" inputmode="numeric" class="in-r" placeholder="${isTime?tReps||'sec':tReps}" value="${v.r}">
         <div class="e1" data-e1>—</div>
-        <button class="done" onclick="toggleDone(this,'${id}')">✓</button></div>`}).join('');
+        <button class="done ${v.done?'on':''}" onclick="toggleDone(this,'${id}')">✓</button></div>`}).join('');
     return `<div class="exo open" data-id="${id}"><div class="top" onclick="if(!event.target.closest('button'))this.parentElement.classList.toggle('open')">
       <div class="num">${idx+1}</div>
       <div style="flex:1"><b>${e.n}</b><div class="small" style="color:var(--accent2)">${prevTxt}</div>
@@ -1044,18 +1087,34 @@ function renderExos(){
         </div>
       </div></div>`;
   }).join('')+`<button class="btn ghost" id="add-exo-btn" onclick="openExoPicker('add')" style="margin-top:4px">＋ Ajouter un exercice</button>`;
-  bindSetInputs();
+  bindSetInputs();updateDraftBar();
 }
-function bindSetInputs(){$$('#exo-list .setrow[data-exo]').forEach(r=>{const w=$('.in-w',r),rp=$('.in-r',r),e1=$('[data-e1]',r);if(w&&rp&&e1){const upd=()=>{const wv=parseFloat(w.value),rv=parseInt(rp.value);e1.textContent=(!isNaN(wv)&&!isNaN(rv)&&wv>0)?e1rm(wv,rv):'—'};w.addEventListener('input',upd);rp.addEventListener('input',upd);upd()}})}
-function toggleWarm(btn){const row=btn.closest('.setrow');const on=row.getAttribute('data-warm')==='1';if(on){row.removeAttribute('data-warm');row.classList.remove('is-warm');btn.classList.remove('warm');const idx=[...row.parentElement.querySelectorAll('.setrow[data-exo]')].indexOf(row);btn.textContent=idx+1}else{row.setAttribute('data-warm','1');row.classList.add('is-warm');btn.classList.add('warm');btn.textContent='W'}}
+function bindSetInputs(){$$('#exo-list .setrow[data-exo]').forEach(r=>{
+  const w=$('.in-w',r),rp=$('.in-r',r),e1=$('[data-e1]',r),dn=$('.done',r);const isTime=!w;
+  const complete=()=>{const rv=parseFloat(rp?rp.value:'');const wv=w?parseFloat(w.value):1;
+    return !isNaN(rv)&&rv>0&&(isTime||(!isNaN(wv)&&wv>0))};
+  const upd=()=>{
+    if(w&&rp&&e1){const wv=parseFloat(w.value),rv=parseInt(rp.value);e1.textContent=(!isNaN(wv)&&!isNaN(rv)&&wv>0)?e1rm(wv,rv):'—'}
+    if(dn){const ok=complete();dn.classList.toggle('locked',!ok);if(!ok)dn.classList.remove('on')}};
+  const onIn=()=>{upd();saveDraft()};
+  if(w)w.addEventListener('input',onIn);
+  if(rp)rp.addEventListener('input',onIn);
+  if(dn)dn._complete=complete;
+  upd()})}
+function toggleWarm(btn){const row=btn.closest('.setrow');const on=row.getAttribute('data-warm')==='1';if(on){row.removeAttribute('data-warm');row.classList.remove('is-warm');btn.classList.remove('warm');const idx=[...row.parentElement.querySelectorAll('.setrow[data-exo]')].indexOf(row);btn.textContent=idx+1}else{row.setAttribute('data-warm','1');row.classList.add('is-warm');btn.classList.add('warm');btn.textContent='W'}saveDraft()}
 function addSetRow(btn,id){const body=btn.closest('.body');const rows=body.querySelectorAll('.setrow[data-exo]');const n=rows.length;const isTime=exDef(id).time;const div=document.createElement('div');div.className='setrow';div.setAttribute('data-exo',id);div.setAttribute('data-set',n);
   div.innerHTML=`<button class="sn" onclick="toggleWarm(this)">${n+1}</button>${isTime?'<div class="small muted" style="text-align:center">durée</div>':'<input type="number" inputmode="decimal" class="in-w" placeholder="kg">'}<input type="number" inputmode="numeric" class="in-r" placeholder="reps"><div class="e1" data-e1>—</div><button class="done" onclick="toggleDone(this,'${id}')">✓</button>`;
-  rows[rows.length-1].after(div);bindSetInputs();}
+  rows[rows.length-1].after(div);bindSetInputs();saveDraft();}
 function removeExo(idx){const arr=sessionExos(currentSession).slice();const [rm]=arr.splice(idx,1);setSessionExos(currentSession,arr);renderExos();toast('« '+exDef(rm).n+' » retiré');}
 function resetSession(){if(DB.sessionPlan)delete DB.sessionPlan[currentSession];save();renderExos();toast('Séance réinitialisée');}
 function toggleDone(btn,exoId){
-  btn.classList.toggle('on');
-  if(btn.classList.contains('on')){startRest(exDef(exoId).rest,exDef(exoId).n)}
+  if(!btn.classList.contains('on')){
+    if(btn._complete&&!btn._complete()){
+      const row=btn.closest('.setrow');const f=row&&(row.querySelector('.in-w')||row.querySelector('.in-r'));
+      toast('Renseigne la charge et les reps');if(f)f.focus();return}
+    btn.classList.add('on');startRest(exDef(exoId).rest,exDef(exoId).n);
+  }else btn.classList.remove('on');
+  saveDraft();
 }
 /* exercise picker (swap / add / create) */
 let exoPickMode='add',exoPickIdx=null;
@@ -1094,7 +1153,7 @@ function saveWorkout(){
   if(!any){toast('Renseigne au moins une série 🙂');return}
   const key=todayKey();const existing=DB.workoutLog[key];
   if(existing&&existing.session!==currentSession&&!confirm('Tu as déjà enregistré la séance '+existing.session+" aujourd'hui. La remplacer par la séance "+currentSession+' ?'))return;
-  DB.workoutLog[key]={session:currentSession,week:wk,exos,ts:Date.now()};save();
+  DB.workoutLog[key]={session:currentSession,week:wk,exos,ts:Date.now()};clearDraft(currentSession);save();
   stopRest();
   toast(prs.length?('💪 Séance + '+prs.length+' PR !'):'Séance enregistrée ! 💪');
   renderWeekStrip();renderExos();renderHome();renderProgress();
@@ -1290,7 +1349,15 @@ let currentLift=null;
 function renderProgress(){
   const wl=DB.weightLog;$('#prog-latest').textContent=wl.length?wl[wl.length-1].w+' kg':'—';
   const raw=wl.map(x=>({v:x.w,l:fmtDate(x.date).replace('.','')}));const sm=smoothWeights(wl).map(x=>({v:R(x.v,1),l:fmtDate(x.date).replace('.','')}));
-  lineChart($('#weight-chart'),wl.length?[raw,sm]:[],{dec:1,colors:['#ff6b35','#4c9dff']});
+  const hasCurve=wl.length>=2;
+  $('#weight-chart').style.display=hasCurve?'block':'none';
+  $('#weight-empty').style.display=hasCurve?'none':'block';
+  $('#weight-legend').style.display=hasCurve?'flex':'none';
+  $('#prog-advice').style.display=hasCurve?'block':'none';
+  if(!hasCurve)$('#weight-empty').innerHTML=wl.length===1
+    ? `<div class="ico">✅</div>1<sup>re</sup> pesée enregistrée : <b>${wl[0].w} kg</b><br><span class="small">Encore une pesée un autre jour et la courbe apparaît.</span>`
+    : `<div class="ico">⚖️</div>Note ton poids ci-dessous pour lancer la courbe.<br><span class="small">Pèse-toi le matin à jeun, 3×/semaine.</span>`;
+  if(hasCurve)lineChart($('#weight-chart'),[raw,sm],{dec:1,colors:['#ff6b35','#4c9dff']});
   const trend=weightTrendPerWeek();
   $('#prog-advice').innerHTML=trend==null?'Enregistre ton poids 3×/sem pour la courbe de tendance (ligne bleue) et des conseils auto.':
     (trend<0.15?`📉 <b>+${trend.toFixed(2)} kg/sem</b> — trop lent. Ajoute +150 kcal/jour.`:trend>0.6?`⚠️ <b>+${trend.toFixed(2)} kg/sem</b> — un peu rapide (risque de gras). Réduis de ~150 kcal.`:`✅ <b>+${trend.toFixed(2)} kg/sem</b> — rythme idéal de prise de masse propre !`);
@@ -1339,18 +1406,26 @@ function saveProfile(){const p=DB.profile;p.age=+$('#pf-age').value||25;p.height
 const TITLES={home:'Tableau de bord',train:'Entraînement',food:'Nutrition',prog:'Progression',profile:'Profil'};
 function go(p){$$('.page').forEach(el=>el.classList.remove('active'));$('#page-'+p).classList.add('active');
   $$('.snav,.tabbar button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));$('#htitle').textContent=TITLES[p];window.scrollTo(0,0);
-  if(p==='home')renderHome();if(p==='train'){renderWeekStrip();renderExos()}if(p==='food'){$('#food-seg button.on').dataset.f==='plan'?renderPlan():renderFoodLog()}if(p==='prog')renderProgress();if(p==='profile')renderProfile();}
+  if(p==='home')renderHome();if(p==='train'){renderWeekStrip();renderExos()}if(p==='food'){const b=$('#food-seg button.on');setFoodTab(b?b.dataset.f:'log')}if(p==='prog')renderProgress();if(p==='profile')renderProfile();}
 $$('.snav,.tabbar button').forEach(b=>b.onclick=()=>go(b.dataset.p));
 $$('#session-seg button').forEach(b=>b.onclick=()=>selectSession(b.dataset.s));
-$('#save-workout').onclick=saveWorkout;$('#reset-workout').onclick=()=>{$$('#exo-list .in-w,#exo-list .in-r').forEach(i=>i.value='');$$('#exo-list [data-e1]').forEach(e=>e.textContent='—');$$('#exo-list .done.on').forEach(b=>b.classList.remove('on'));stopRest();toast('Champs vidés')};
+$('#save-workout').onclick=saveWorkout;$('#reset-workout').onclick=()=>{$$('#exo-list .in-w,#exo-list .in-r').forEach(i=>i.value='');$$('#exo-list [data-e1]').forEach(e=>e.textContent='—');$$('#exo-list .done').forEach(b=>{b.classList.remove('on');b.classList.add('locked')});clearDraft(currentSession);updateDraftBar();stopRest();toast('Champs vidés')};
 $('#rest-skip').onclick=stopRest;$('#rest-m15').onclick=()=>{restEnd=Math.max(Date.now()+1000,restEnd-15000);updRest()};$('#rest-p15').onclick=()=>{restEnd+=15000;restDone=false;updRest()};
 $('#plate-btn').onclick=()=>{$('#plate-modal').classList.add('show');renderPlate()};$('#close-plate').onclick=()=>$('#plate-modal').classList.remove('show');
 $('#plate-total').oninput=renderPlate;$('#plate-bar').oninput=renderPlate;
 
-$$('#food-seg button').forEach(b=>b.onclick=()=>{$$('#food-seg button').forEach(x=>x.classList.toggle('on',x===b));const plan=b.dataset.f==='plan';$('#food-log-view').style.display=plan?'none':'block';$('#food-plan-view').style.display=plan?'block':'none';plan?renderPlan():renderFoodLog()});
+function setFoodTab(f){
+  if(!['log','plan','week'].includes(f))f='log';
+  $$('#food-seg button').forEach(x=>x.classList.toggle('on',x.dataset.f===f));
+  $('#food-log-view').style.display=f==='log'?'block':'none';
+  $('#food-plan-view').style.display=f==='log'?'none':'block';
+  $('#plan-day-view').style.display=f==='plan'?'block':'none';
+  $('#plan-week-view').style.display=f==='week'?'block':'none';
+  if(f==='log')renderFoodLog();else if(f==='plan')renderPlan();else renderWeekPlan();
+}
+$$('#food-seg button').forEach(b=>b.onclick=()=>setFoodTab(b.dataset.f));
 $('#food-prev').onclick=()=>{const d=new Date(currentFoodDate);d.setDate(d.getDate()-1);currentFoodDate=todayKey(d);renderFoodLog()};
 $('#food-next').onclick=()=>{const d=new Date(currentFoodDate);d.setDate(d.getDate()+1);const nk=todayKey(d);if(nk<=todayKey()){currentFoodDate=nk;renderFoodLog()}};
-$$('#plan-seg button').forEach(b=>b.onclick=()=>{$$('#plan-seg button').forEach(x=>x.classList.toggle('on',x===b));const wk=b.dataset.pl==='week';$('#plan-day-view').style.display=wk?'none':'block';$('#plan-week-view').style.display=wk?'block':'none';wk?renderWeekPlan():renderPlan()});
 function dayShopLabel(){return "Aujourd'hui · "+DAY_NAMES[todayDI()]}
 $('#regen-plan').onclick=()=>{DB.plan.seed++;DB.plan.overrides={};save();renderPlan();const el=$('#shopping-list');if(el.style.display!=='none'){renderShoppingInto('shopping-list',[planDishes()],dayShopLabel())}toast('Nouveau plan 🍽️')};
 $('#show-shopping').onclick=()=>{const el=$('#shopping-list');if(el.style.display==='none'){renderShoppingInto('shopping-list',[planDishes()],dayShopLabel());el.style.display='block';$('#show-shopping').textContent='🛒 Masquer la liste'}else{el.style.display='none';$('#show-shopping').textContent='🛒 Liste de courses (jour)'}};
@@ -1418,10 +1493,18 @@ $('#onb-skip').onclick=()=>{DB.startDate=todayKey();save();$('#onb-modal').class
 /* ---- Modal accessibility: Escape closes, focus restore ---- */
 let lastFocus=null;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){const open=$('.modal.show');if(open){open.classList.remove('show')}}});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Tab')return;const m=$('.modal.show');if(!m)return;
+  const f=[...m.querySelectorAll('button,input,select,textarea,a[href],[tabindex]:not([tabindex="-1"])')].filter(el=>el.offsetParent&&!el.disabled);
+  if(!f.length)return;const first=f[0],last=f[f.length-1],a=document.activeElement;
+  if(!m.contains(a)){e.preventDefault();first.focus();return}
+  if(e.shiftKey&&a===first){e.preventDefault();last.focus()}
+  else if(!e.shiftKey&&a===last){e.preventDefault();first.focus()}
+});
 $$('.modal').forEach(m=>{const obs=new MutationObserver(()=>{if(m.classList.contains('show')){lastFocus=document.activeElement;const f=m.querySelector('input,select,button');f&&setTimeout(()=>f.focus&&f.focus(),60)}else{lastFocus&&lastFocus.focus&&lastFocus.focus()}});obs.observe(m,{attributes:true,attributeFilter:['class']})});
 
 // expose
-Object.assign(window,{go,selectSession,setWeek,toggleDone,delFood,openSwap,doSwap,setLift,removeShop,clearRemoved,copyShopping,openAddFood,openEditFood,pickFoodByName,pickRecent,setQty,setMeal,addPlanMealToJournal,addPlanDayToJournal,openExoPicker,pickExo,removeExo,resetSession,addSetRow,toggleWarm,deleteSession,openOnboarding});
+Object.assign(window,{go,selectSession,setWeek,toggleDone,discardDraft,setFoodTab,delFood,openSwap,doSwap,setLift,removeShop,clearRemoved,copyShopping,openAddFood,openEditFood,pickFoodByName,pickRecent,setQty,setMeal,addPlanMealToJournal,addPlanDayToJournal,openExoPicker,pickExo,removeExo,resetSession,addSetRow,toggleWarm,deleteSession,openOnboarding});
 renderHome();renderProfile();
 if(IS_FIRST_RUN)openOnboarding();
 </script>
