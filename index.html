@@ -123,6 +123,9 @@ button:focus-visible,.snav:focus-visible,.chip:focus-visible,.wkbox:focus-visibl
 .center{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .between>*,.center>*{min-width:0}
 @media(max-width:400px){.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr}}
+.qty-row{flex-wrap:nowrap;gap:8px}
+.qty-row input{flex:1 1 auto;width:auto;min-width:56px}
+.qty-row .btn,.qty-row .chip{flex:0 0 auto}
 @media(max-width:360px){.page{padding:12px}.center{gap:12px}}
 
 .btn{position:relative;overflow:hidden;background:var(--accg);color:#160a03;font-weight:750;padding:13px 16px;border-radius:12px;width:100%;font-size:15px;
@@ -263,7 +266,7 @@ canvas{width:100%;display:block}
 .wkbox b{display:block;font-size:14px}.wkbox small{font-size:9px;color:var(--muted)}
 
 .water{display:flex;gap:5px}
-.wdrop{flex:1;height:34px;border-radius:8px;background:var(--bg2);border:1px solid var(--line2);
+.wdrop{flex:1;height:44px;border-radius:9px;background:var(--bg2);border:1px solid var(--line2);cursor:pointer;padding:0;
   transition:background .32s var(--ease),border-color .3s,transform .32s var(--spring),box-shadow .32s}
 .wdrop.on{background:linear-gradient(180deg,#6ab4ff,var(--blue));border-color:var(--blue);box-shadow:0 6px 16px -7px rgba(76,157,255,.8)}
 @media(hover:hover){.wdrop:hover{transform:translateY(-2px)}}
@@ -311,6 +314,25 @@ canvas{width:100%;display:block}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px) scale(1)}
 hr{border:none;border-top:1px solid var(--line2);margin:14px 0}
 
+/* séance guidée */
+.exo{scroll-margin-top:78px}
+.exo:not(.open) .muscles,.exo:not(.open) .prev{display:none}
+.exo.finished .num{background:rgba(49,197,109,.18);color:var(--green)}
+.exo .state{display:inline-block;min-width:38px;text-align:center;font-size:11px;font-weight:750;padding:3px 8px;border-radius:20px;background:var(--card3);color:var(--muted);font-variant-numeric:tabular-nums}
+.exo .state.ok{background:rgba(49,197,109,.16);color:var(--green)}
+#session-progress{background:linear-gradient(180deg,var(--card2),#171e2c);border:1px solid var(--line2);border-radius:13px;padding:11px 13px;margin-bottom:12px;box-shadow:var(--hair)}
+#session-progress .sp-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+#session-progress .sp-head b{font-size:13.5px}
+.sp-track{height:6px;border-radius:4px;background:var(--bg2);overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,.5)}
+.sp-track i{display:block;height:100%;background:var(--accg);border-radius:4px;transition:width .45s var(--ease)}
+
+/* bandeau profil incomplet */
+.warnbar{display:none;align-items:center;gap:10px;flex-wrap:wrap;background:linear-gradient(135deg,rgba(255,176,32,.14),rgba(255,176,32,.03));
+  border:1px solid rgba(255,176,32,.34);border-radius:13px;padding:11px 13px;margin-bottom:14px;font-size:13.5px}
+.warnbar b{color:var(--amber)}
+.btn:disabled{opacity:.45;box-shadow:none;filter:grayscale(.4);cursor:not-allowed}
+.btn:disabled::after{display:none}
+
 /* brouillon de séance */
 #draft-bar{display:none;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
   background:linear-gradient(135deg,rgba(49,197,109,.13),rgba(49,197,109,.03));border:1px solid rgba(49,197,109,.3);
@@ -345,6 +367,7 @@ hr{border:none;border-top:1px solid var(--line2);margin:14px 0}
 
     <!-- ============ HOME ============ -->
     <section class="page active" id="page-home">
+      <div class="warnbar" id="profile-warn">⚠️ <span style="flex:1;min-width:170px"><b>Profil incomplet</b> — ton objectif calorique est estimé sur un profil type.</span><button class="btn ghost mini" onclick="openOnboarding()">Compléter</button></div>
       <div class="grid dash">
         <div>
           <div class="card">
@@ -398,6 +421,7 @@ hr{border:none;border-top:1px solid var(--line2);margin:14px 0}
       <div class="seg" id="session-seg" style="margin:12px 0"><button data-s="A" class="on">Séance A</button><button data-s="B">Séance B</button><button data-s="C">Séance C</button></div>
 
       <div class="tip" style="margin-bottom:14px"><span class="i">🎯</span><div id="session-tip"></div></div>
+      <div id="session-progress"><div class="sp-head"><b id="sp-title">Exercice 1/1</b><span class="small" id="sp-lbl"></span></div><div class="sp-track"><i id="sp-bar" style="width:0%"></i></div></div>
       <div id="draft-bar"><span>💾 <b>Séance en cours</b> — sauvegarde auto</span><button class="btn ghost mini" onclick="discardDraft()">Vider</button></div>
       <div id="exo-list"></div>
 
@@ -426,7 +450,7 @@ hr{border:none;border-top:1px solid var(--line2);margin:14px 0}
             <div id="log-macro-pills"></div>
           </div>
           <div class="card">
-            <div class="between" style="margin-bottom:8px"><b>Hydratation</b><span class="small mono" id="water-lbl2"></span></div>
+            <div class="between" style="margin-bottom:8px"><b>Hydratation <span class="small muted" id="water-day"></span></b><span class="small mono" id="water-lbl2"></span></div>
             <div class="water" id="water-drops2"></div>
           </div>
         </div>
@@ -437,7 +461,7 @@ hr{border:none;border-top:1px solid var(--line2);margin:14px 0}
       <div id="food-plan-view" style="display:none">
         <div id="plan-day-view">
           <div class="tip" style="margin-bottom:14px"><span class="i">🍽️</span><div>Journée composée automatiquement pour <b id="plan-target">—</b> kcal · <span id="plan-meals-n">5</span> prises · sans poisson ni fruits de mer. Échange chaque plat qui ne te plaît pas.</div></div>
-          <div class="between" style="margin-bottom:12px"><b>Menu généré</b><button class="btn ghost sm" id="regen-plan">↻ Nouvelle journée</button></div>
+          <div class="between" style="margin-bottom:12px"><b>Menu généré</b><span class="center" style="gap:8px"><button class="btn ghost sm" id="reset-choices" style="display:none;color:var(--amber)">↺ Mes choix</button><button class="btn ghost sm" id="regen-plan">↻ Nouvelle journée</button></span></div>
           <div id="plan-totals" class="card tight" style="margin-bottom:12px"></div>
           <div id="plan-meals"></div>
           <button class="btn ghost" id="show-shopping" style="margin-top:4px">🛒 Liste de courses (jour)</button>
@@ -446,7 +470,7 @@ hr{border:none;border-top:1px solid var(--line2);margin:14px 0}
 
         <div id="plan-week-view" style="display:none">
           <div class="tip" style="margin-bottom:14px"><span class="i">📅</span><div>Semaine complète de menus pour anticiper tes courses. 7 jours calibrés sur <b id="week-target">—</b> kcal/jour. Génère la liste de courses de toute la semaine en un clic.</div></div>
-          <div class="between" style="margin-bottom:12px"><b>Menus de la semaine</b><button class="btn ghost sm" id="regen-week">↻ Régénérer</button></div>
+          <div class="between" style="margin-bottom:12px"><b>Menus de la semaine</b><span class="center" style="gap:8px"><button class="btn ghost sm" id="reset-choices-week" style="display:none;color:var(--amber)">↺ Mes choix</button><button class="btn ghost sm" id="regen-week">↻ Régénérer</button></span></div>
           <div id="week-plan"></div>
           <button class="btn" id="show-week-shopping" style="margin-top:4px">🛒 Liste de courses de la semaine</button>
           <div id="week-shopping-list" style="display:none;margin-top:12px"></div>
@@ -563,7 +587,7 @@ hr{border:none;border-top:1px solid var(--line2);margin:14px 0}
     <button class="btn ghost mini" id="fm-back" style="margin-bottom:12px">‹ Retour</button>
     <div class="card tight" style="margin-bottom:12px"><b id="fm-food-name">—</b><div class="small" id="fm-food-basis"></div></div>
     <label class="field"><span>Quantité</span>
-      <div class="center"><button class="btn ghost" id="fm-minus" aria-label="Diminuer la quantité" style="width:46px;font-size:20px">−</button>
+      <div class="center qty-row"><button class="btn ghost" id="fm-minus" aria-label="Diminuer la quantité" style="width:46px;font-size:20px">−</button>
         <input type="number" id="fm-qty" inputmode="decimal" aria-label="Quantité" style="text-align:center" step="1">
         <span id="fm-qty-unit" class="chip" style="min-width:56px;justify-content:center">g</span>
         <button class="btn ghost" id="fm-plus" aria-label="Augmenter la quantité" style="width:46px;font-size:20px">＋</button></div>
@@ -629,7 +653,8 @@ hr{border:none;border-top:1px solid var(--line2);margin:14px 0}
     <select id="onb-activity"><option value="1.2">Sédentaire</option><option value="1.375" selected>Légère</option><option value="1.55">Modérée</option><option value="1.725">Élevée</option></select></label>
   <label class="field"><span>Repas par jour</span>
     <select id="onb-meals"><option value="3">3</option><option value="4">4</option><option value="5" selected>5</option><option value="6">6</option></select></label>
-  <button class="btn" id="onb-start">C'est parti 💪</button>
+  <div class="small" id="onb-hint" style="color:var(--amber);margin:-4px 0 10px;min-height:16px"></div>
+  <button class="btn" id="onb-start" disabled>C'est parti 💪</button>
   <button class="btn ghost sm" id="onb-skip" style="width:100%;margin-top:10px">Plus tard</button>
 </div></div>
 
@@ -649,7 +674,7 @@ const capitalize=s=>s.charAt(0).toUpperCase()+s.slice(1);
 /* ---------------- DATA ---------------- */
 const DEFAULT={
   profile:{sex:'h',age:25,height:178,weight:65,activity:1.375,surplus:400,meals:5},
-  startDate:todayKey(), weightLog:[], workoutLog:{}, exoState:{}, foodLog:{}, plan:{seed:1,overrides:{},date:'',removed:[]}, view:{week:null}, recentFoods:[], customFoods:[], sessionPlan:{}, customExos:{}, draft:null
+  startDate:todayKey(), weightLog:[], workoutLog:{}, exoState:{}, foodLog:{}, plan:{seed:1,daySeed:{},overrides:{},date:'',removed:[]}, view:{week:null}, recentFoods:[], customFoods:[], sessionPlan:{}, customExos:{}, draft:null, profileSet:false
 };
 let IS_FIRST_RUN=false;try{IS_FIRST_RUN=!localStorage.getItem('ectomass_v2')}catch(e){}
 let DB=load();
@@ -980,16 +1005,24 @@ function renderHome(){
   const vol=weekWorkoutsDone().reduce((a,k)=>a+sessionVolume(DB.workoutLog[k]),0);
   $('#week-vol').textContent=doneLetters.size+'/3 · '+R(vol)+' kg';
 
+  const pw2=$('#profile-warn');if(pw2)pw2.style.display=DB.profileSet?'none':'flex';
+
   const tips=["Bois un shake gainer entre deux repas si tu peines à finir tes assiettes.","+1 c.à.s d'huile d'olive = +135 kcal sans volume dans l'estomac.","7-9h de sommeil : c'est là que le muscle se construit.","Limite le cardio à 1-2×20 min/sem pour préserver ton surplus.","Pèse-toi le matin à jeun, même jour, pour un suivi fiable.","Stagnation 2 semaines ? +150 kcal/jour.","Priorise les glucides autour de l'entraînement.","Applique les charges conseillées (vertes) : c'est ta surcharge progressive."];
   $('#home-tip').textContent=tips[new Date().getDate()%tips.length];
 }
-function renderWater(){
-  const t=targets();const e=dayFood(todayKey());const goal=t.water;const cups=Math.round(goal/250);const filled=Math.round((e.water||0)/250);
-  const drops=[...Array(cups)].map((_,i)=>`<div class="wdrop ${i<filled?'on':''}"></div>`).join('');
-  $('#water-drops').innerHTML=drops;$('#water-drops2').innerHTML=drops;
-  const lbl=R((e.water||0)/1000,1)+' / '+R(goal/1000,1)+' L';
-  $('#water-lbl').textContent=lbl;$('#water-lbl2').textContent=lbl;
+function renderWaterInto(dropsSel,lblSel,date){
+  const goal=targets().water,cups=Math.round(goal/250),e=dayFood(date),filled=Math.round((e.water||0)/250);
+  const el=$(dropsSel);
+  if(el)el.innerHTML=[...Array(cups)].map((_,i)=>`<button class="wdrop ${i<filled?'on':''}" aria-label="${(i+1)*250} ml" onclick="setWater(${(i+1)*250},'${date}')"></button>`).join('');
+  const l=$(lblSel);if(l)l.textContent=R((e.water||0)/1000,1)+' / '+R(goal/1000,1)+' L';
 }
+function renderWater(){
+  renderWaterInto('#water-drops','#water-lbl',todayKey());
+  renderWaterInto('#water-drops2','#water-lbl2',currentFoodDate);
+}
+function setWater(ml,date){const cur=dayFood(date).water||0;const v=(cur===ml)?ml-250:ml;
+  if(!DB.foodLog[date])DB.foodLog[date]={items:[],water:0};
+  DB.foodLog[date].water=Math.max(0,v);save();renderWater()}
 function weightTrendPerWeek(){const wl=DB.weightLog;if(wl.length<3)return null;const sm=smoothWeights(wl);const last=sm[sm.length-1];const ref=sm.find(x=>(new Date(last.date)-new Date(x.date))<=14*864e5)||sm[0];const days=(new Date(last.date)-new Date(ref.date))/864e5;if(days<3)return null;return (last.v-ref.v)/days*7}
 function smoothWeights(wl){const w=7;return wl.map((d,i)=>{const win=wl.slice(Math.max(0,i-w+1),i+1);return{date:d.date,v:win.reduce((a,x)=>a+x.w,0)/win.length}})}
 function sessionVolume(s){return Object.values(s.exos||{}).reduce((a,arr)=>a+arr.reduce((b,x)=>b+(x.warm?0:(x.w||0)*(x.r||0)),0),0)}
@@ -1039,7 +1072,7 @@ function renderExos(){
   const last=lastSessionData(currentSession);
   // today's already-logged session (for editing)
   const todayLog=(DB.workoutLog[todayKey()]&&DB.workoutLog[todayKey()].session===currentSession)?DB.workoutLog[todayKey()].exos:null;
-  const draft=draftFor(currentSession);
+  const draft=draftFor(currentSession);const finishedArr=[];
   $('#exo-list').innerHTML=exos.map((id,idx)=>{
     const e=exDef(id),tSets=targetSets(id,wk),tReps=targetReps(id,wk),reco=recoWeight(id,wk),prev=last[id];
     const isTime=e.time;const done=todayLog&&todayLog[id];
@@ -1052,19 +1085,21 @@ function renderExos(){
       if(dr&&dr[si])return{w:dr[si].w||'',r:dr[si].r||'',warm:dr[si].warm?1:0,done:dr[si].done?1:0};
       if(logged&&logged[si])return{w:logged[si].w||'',r:logged[si].r||'',warm:logged[si].warm?1:0,done:1};
       return{w:'',r:'',warm:0,done:0}};
-    const sets=[...Array(nSets)].map((_,si)=>{
-      const v=cell(si),warm=v.warm;
+    const cells=[...Array(nSets)].map((_,si)=>cell(si));
+    const sets=cells.map((v,si)=>{
+      const warm=v.warm;
       return `<div class="setrow ${warm?'is-warm':''}" data-exo="${id}" data-set="${si}"${warm?' data-warm="1"':''}>
         <button class="sn ${warm?'warm':''}" onclick="toggleWarm(this)" title="Marquer échauffement">${warm?'W':si+1}</button>
         ${isTime?'<div class="small muted" style="text-align:center">durée</div>':`<input type="number" inputmode="decimal" class="in-w" placeholder="${reco!=null?reco:'kg'}" value="${v.w}">`}
         <input type="number" inputmode="numeric" class="in-r" placeholder="${isTime?tReps||'sec':tReps}" value="${v.r}">
         <div class="e1" data-e1>—</div>
         <button class="done ${v.done?'on':''}" onclick="toggleDone(this,'${id}')">✓</button></div>`}).join('');
-    return `<div class="exo open" data-id="${id}"><div class="top" onclick="if(!event.target.closest('button'))this.parentElement.classList.toggle('open')">
+    const wc=cells.filter(c=>!c.warm);const isFin=wc.length>0&&wc.every(c=>c.done);finishedArr[idx]=isFin;
+    return `<div class="exo ${isFin?'finished':''}" data-id="${id}"><div class="top" onclick="if(!event.target.closest('button'))openExo(${idx})">
       <div class="num">${idx+1}</div>
-      <div style="flex:1"><b>${e.n}</b><div class="small" style="color:var(--accent2)">${prevTxt}</div>
+      <div style="flex:1"><b>${e.n}</b><div class="small prev" style="color:var(--accent2)">${prevTxt}</div>
         <div class="muscles">${e.m.map(m=>`<span class="tag">${m}</span>`).join('')}</div></div>
-      <div class="small" style="text-align:right">${tSets}×${isTime?(tReps||'45')+'s':tReps}<br><span class="muted">repos ${e.rest}s</span></div></div>
+      <div class="small" style="text-align:right"><span data-st="${idx}"></span><br>${tSets}×${isTime?(tReps||'45')+'s':tReps} · <span class="muted">${e.rest}s</span></div></div>
       <div class="body">
         <div class="row wrap" style="gap:6px;margin-bottom:8px">
           <span class="tag">⏱ Tempo ${e.tempo}</span>
@@ -1087,8 +1122,38 @@ function renderExos(){
         </div>
       </div></div>`;
   }).join('')+`<button class="btn ghost" id="add-exo-btn" onclick="openExoPicker('add')" style="margin-top:4px">＋ Ajouter un exercice</button>`;
-  bindSetInputs();updateDraftBar();
+  // séance guidée : un seul exercice ouvert — celui en cours
+  let cur=finishedArr.findIndex(f=>!f);
+  if(openExoIdx!=null&&openExoIdx>=0&&openExoIdx<exos.length&&!finishedArr[openExoIdx])cur=openExoIdx;
+  const els=$$('#exo-list .exo');
+  if(cur>=0&&els[cur])els[cur].classList.add('open');
+  openExoIdx=cur>=0?cur:null;
+  bindSetInputs();updateSessionProgress();updateDraftBar();
 }
+let openExoIdx=0;
+function openExo(idx){const list=$$('#exo-list .exo');const el=list[idx];if(!el)return;
+  const was=el.classList.contains('open');
+  list.forEach(x=>x.classList.remove('open'));
+  if(was){openExoIdx=null}
+  else{el.classList.add('open');openExoIdx=idx;el.scrollIntoView({block:'start'})}
+  updateSessionProgress()}
+function updateSessionProgress(){
+  const els=$$('#exo-list .exo');const box=$('#session-progress');if(!box)return;
+  if(!els.length){box.style.display='none';return}
+  box.style.display='block';
+  let doneEx=0,tot=0,dn=0;
+  els.forEach(el=>{
+    const rows=$$('.setrow[data-exo]',el).filter(r=>r.getAttribute('data-warm')!=='1');
+    const d=rows.filter(r=>{const b=$('.done',r);return b&&b.classList.contains('on')}).length;
+    tot+=rows.length;dn+=d;
+    const fin=rows.length>0&&d===rows.length;if(fin)doneEx++;
+    el.classList.toggle('finished',fin);
+    const st=$('[data-st]',el);
+    if(st)st.innerHTML=fin?'<span class="state ok">✓ fait</span>':`<span class="state">${d}/${rows.length}</span>`});
+  const cur=els.findIndex(el=>el.classList.contains('open'));
+  $('#sp-title').textContent=cur>=0?`Exercice ${cur+1}/${els.length}`:`${doneEx}/${els.length} exercices validés`;
+  $('#sp-lbl').textContent=`${dn}/${tot} séries validées`;
+  $('#sp-bar').style.width=(tot?dn/tot*100:0)+'%'}
 function bindSetInputs(){$$('#exo-list .setrow[data-exo]').forEach(r=>{
   const w=$('.in-w',r),rp=$('.in-r',r),e1=$('[data-e1]',r),dn=$('.done',r);const isTime=!w;
   const complete=()=>{const rv=parseFloat(rp?rp.value:'');const wv=w?parseFloat(w.value):1;
@@ -1114,7 +1179,16 @@ function toggleDone(btn,exoId){
       toast('Renseigne la charge et les reps');if(f)f.focus();return}
     btn.classList.add('on');startRest(exDef(exoId).rest,exDef(exoId).n);
   }else btn.classList.remove('on');
-  saveDraft();
+  saveDraft();updateSessionProgress();
+  const el=btn.closest('.exo');
+  if(el&&el.classList.contains('finished')){
+    const list=$$('#exo-list .exo'),i=list.indexOf(el);
+    const next=list.findIndex((x,j)=>j>i&&!x.classList.contains('finished'));
+    setTimeout(()=>{
+      if(next>=0){openExo(next)}
+      else{el.classList.remove('open');openExoIdx=null;updateSessionProgress();toast('Tous les exercices sont validés 💪')}
+    },520);
+  }
 }
 /* exercise picker (swap / add / create) */
 let exoPickMode='add',exoPickIdx=null;
@@ -1184,6 +1258,7 @@ function defaultMeal(){const h=new Date().getHours();return h<11?'bf':h<15?'lunc
 function fmtNum(n){return Number.isInteger(n)?n:R(n,1)}
 function renderFoodLog(){
   $('#food-date').textContent=currentFoodDate===todayKey()?"Aujourd'hui":capitalize(fmtDate(currentFoodDate));
+  $('#water-day').textContent=currentFoodDate===todayKey()?'':'· '+fmtDate(currentFoodDate);
   const t=targets(),tot=dayTotals(currentFoodDate);
   $('#log-total').textContent=R(tot.k)+' / '+t.kcal+' kcal';const rem=t.kcal-tot.k;
   $('#log-remaining').textContent=rem>=0?R(rem)+' restantes':R(-rem)+' au-dessus';
@@ -1198,7 +1273,8 @@ function renderFoodLog(){
   MEAL_ORDER.forEach(m=>{const g=groups[m];if(!g)return;const sub=g.reduce((a,x)=>a+x.it.k,0);
     html+=`<div class="mealgrp"><div class="gh"><b>${MEAL_LBL[m]}</b><span class="center" style="gap:12px"><span class="sub">${R(sub)} kcal</span>${m!=='other'?`<button class="addbtn" aria-label="Ajouter un aliment à ${MEAL_SHORT[m]||MEAL_LBL[m]}" onclick="openAddFood('${m}')">＋</button>`:''}</span></div>`;
     html+=g.map(x=>{const it=x.it;const ed=it.per?`onclick="openEditFood(${x.i})"`:'';
-      return `<div class="logitem" ${ed}><div><b>${it.name}</b>${it.qty!=null?` <span class="small muted">${fmtNum(it.qty)} ${it.unit==='pc'?'pc':it.unit}</span>`:''}<div class="small">${R(it.k)} kcal · ${macroPills(it.p,it.c,it.f)}</div></div><button class="del" aria-label="Supprimer ${it.name}" onclick="event.stopPropagation();delFood(${x.i})">🗑</button></div>`}).join('');
+      const qlbl=it.qty==null?'':(it.cat==='Plat'?(it.qty==1?'<span class="tag" style="color:var(--accent2)">menu</span>':`<span class="small muted">×${fmtNum(it.qty)} portion</span>`):`<span class="small muted">${fmtNum(it.qty)} ${it.unit==='pc'?'pc':it.unit}</span>`);
+      return `<div class="logitem" ${ed}><div><b>${it.name}</b> ${qlbl}<div class="small">${R(it.k)} kcal · ${macroPills(it.p,it.c,it.f)}</div></div><button class="del" aria-label="Supprimer ${it.name}" onclick="event.stopPropagation();delFood(${x.i})">🗑</button></div>`}).join('');
     html+='</div>';
   });
   $('#food-log-list').innerHTML=html;
@@ -1215,7 +1291,7 @@ function renderFoodSearch(q){const list=allFoods().filter(f=>f.n.toLowerCase().i
   $('#food-search-results').innerHTML=list.map(f=>{const d=foodMacros(f,f.def);return `<div class="qfood" onclick="pickFoodByName('${f.n.replace(/'/g,"\\'")}')"><div><b>${f.n}</b><div class="small">${fmtNum(f.def)} ${f.u==='pc'?'pc':f.u} · ${macroPills(d.p,d.c,d.f)}</div></div><b class="pill k">${d.k}</b></div>`}).join('')||'<div class="small muted" style="padding:8px">Aucun résultat — crée-le dans l\'onglet « Créer un aliment ».</div>'}
 function pickFoodByName(name){const f=allFoods().find(x=>x.n===name);if(f)openEditor(f,null)}
 function pickRecent(name){const f=(DB.recentFoods||[]).find(x=>x.n===name)||allFoods().find(x=>x.n===name);if(f)openEditor(f,null)}
-function openEditFood(index){const it=(DB.foodLog[currentFoodDate].items||[])[index];if(!it||!it.per)return;$('#food-modal').classList.add('show');openEditor({n:it.name,u:it.unit,def:it.qty,per:it.per,cat:'Perso'},index)}
+function openEditFood(index){const it=(DB.foodLog[currentFoodDate].items||[])[index];if(!it||!it.per)return;$('#food-modal').classList.add('show');openEditor({n:it.name,u:it.unit||'pc',def:it.qty!=null?it.qty:1,per:it.per,cat:it.cat||'Perso',pk:it.pk},index)}
 function openEditor(food,index){
   const it=index!=null?DB.foodLog[currentFoodDate].items[index]:null;
   EDIT={food,index,qty:it?it.qty:food.def,meal:it?(it.meal||pendingMeal):pendingMeal};
@@ -1223,12 +1299,13 @@ function openEditor(food,index){
   renderEditor();
 }
 function renderEditor(){
-  const f=EDIT.food,isPc=f.u==='pc';
+  const f=EDIT.food,isDish=f.cat==='Plat',isPc=f.u==='pc';
   $('#fm-food-name').textContent=f.n;
-  $('#fm-food-basis').textContent=isPc?`${f.per[0]} kcal · P${f.per[1]} G${f.per[2]} L${f.per[3]} / pièce`:`${f.per[0]} kcal · P${f.per[1]} G${f.per[2]} L${f.per[3]} / 100 ${f.u}`;
-  $('#fm-qty').value=EDIT.qty;$('#fm-qty').step=isPc?1:10;$('#fm-qty-unit').textContent=isPc?'pc':f.u;
-  const quicks=isPc?[1,2,3,4]:[50,100,150,200,250];
-  $('#fm-quick').innerHTML=quicks.map(q=>`<button class="chip msel ${q==EDIT.qty?'on':''}" onclick="setQty(${q})">${q}${isPc?'':' '+f.u}</button>`).join('');
+  $('#fm-food-basis').textContent=isDish?`${f.per[0]} kcal · P${f.per[1]} G${f.per[2]} L${f.per[3]} / portion complète`
+    :(isPc?`${f.per[0]} kcal · P${f.per[1]} G${f.per[2]} L${f.per[3]} / pièce`:`${f.per[0]} kcal · P${f.per[1]} G${f.per[2]} L${f.per[3]} / 100 ${f.u}`);
+  $('#fm-qty').value=EDIT.qty;$('#fm-qty').step=isDish?0.25:(isPc?1:10);$('#fm-qty-unit').textContent=isDish?'portion':(isPc?'pc':f.u);
+  const quicks=isDish?[0.5,0.75,1,1.5]:(isPc?[1,2,3,4]:[50,100,150,200,250]);
+  $('#fm-quick').innerHTML=quicks.map(q=>`<button class="chip msel ${q==EDIT.qty?'on':''}" onclick="setQty(${q})">${isDish?'×'+q:q+(isPc?'':' '+f.u)}</button>`).join('');
   $('#fm-meal').innerHTML=['bf','lunch','snack','dinner'].map(m=>`<button class="chip msel ${m===EDIT.meal?'on':''}" onclick="setMeal('${m}')">${MEAL_SHORT[m]}</button>`).join('');
   updatePreview();
   $('#fm-confirm').textContent=EDIT.index!=null?'Enregistrer':'Ajouter au journal';
@@ -1239,27 +1316,42 @@ function setMeal(m){EDIT.meal=m;$$('#fm-meal .chip').forEach((c,i)=>c.classList.
 function confirmFood(){
   const f=EDIT.food,qty=parseFloat($('#fm-qty').value)||f.def,mac=foodMacros(f,qty);
   const item={name:f.n,meal:EDIT.meal,qty,unit:f.u,per:f.per.slice(),k:mac.k,p:mac.p,c:mac.c,f:mac.f};
+  if(f.cat==='Plat')item.cat='Plat';if(f.pk)item.pk=f.pk;
   if(EDIT.index!=null){DB.foodLog[currentFoodDate].items[EDIT.index]=item;save();toast('Modifié ✓')}
   else{addToJournal(currentFoodDate,item);pushRecent(f);toast('Ajouté ✓')}
   renderFoodLog();renderHome();$('#food-modal').classList.remove('show');
 }
 function pushRecent(f){DB.recentFoods=[{n:f.n,u:f.u,def:f.def,per:f.per.slice(),cat:f.cat||'Perso'},...(DB.recentFoods||[]).filter(x=>x.n!==f.n)].slice(0,10);save()}
-function addPlanMealToJournal(pos){const chosen=planDishes();const t=targets();const raw=chosen.reduce((a,c)=>a+dishTotals(c.dish).k,0);const scale=t.kcal/raw;const c=chosen[pos];const dt=dishTotals(c.dish);
-  addToJournal(todayKey(),{name:c.dish.name,meal:c.slot,k:R(dt.k*scale),p:R(dt.p*scale,1),c:R(dt.c*scale,1),f:R(dt.f*scale,1)});
-  toast('Ajouté au journal ✓');renderHome();}
-function addPlanDayToJournal(){const chosen=planDishes();const t=targets();const raw=chosen.reduce((a,c)=>a+dishTotals(c.dish).k,0);const scale=t.kcal/raw;
-  chosen.forEach(c=>{const dt=dishTotals(c.dish);addToJournal(todayKey(),{name:c.dish.name,meal:c.slot,k:R(dt.k*scale),p:R(dt.p*scale,1),c:R(dt.c*scale,1),f:R(dt.f*scale,1)})});
-  toast('Journée ajoutée au journal ✓');renderHome();}
-function changeWater(delta){const k=todayKey();if(!DB.foodLog[k])DB.foodLog[k]={items:[],water:0};DB.foodLog[k].water=Math.max(0,(DB.foodLog[k].water||0)+delta);save();renderWater()}
+function planScale(chosen){const t=targets();const raw=chosen.reduce((a,c)=>a+dishTotals(c.dish).k,0);return raw?t.kcal/raw:1}
+/* un plat devient un aliment « portion » : éditable ensuite dans le journal */
+function planItem(c,scale){const dt=dishTotals(c.dish);
+  const per=[R(dt.k*scale),R(dt.p*scale,1),R(dt.c*scale,1),R(dt.f*scale,1)];
+  return {name:c.dish.name,meal:c.slot,qty:1,unit:'pc',per,cat:'Plat',pk:c.di+':'+c.pos,k:per[0],p:per[1],c:per[2],f:per[3]}}
+function todayItems(){return (DB.foodLog[todayKey()]||{}).items||[]}
+function addPlanMealToJournal(pos){const chosen=planDishes(),scale=planScale(chosen),c=chosen[pos];const it=planItem(c,scale);
+  if(todayItems().some(x=>x.pk===it.pk)&&!confirm('« '+it.name+" » est déjà dans ton journal d'aujourd'hui. L'ajouter une seconde fois ?"))return;
+  addToJournal(todayKey(),it);toast('Ajouté au journal ✓');renderHome();renderFoodLog();}
+function addPlanDayToJournal(){const chosen=planDishes(),scale=planScale(chosen),di=String(todayDI());
+  const dup=todayItems().filter(x=>x.pk&&x.pk.split(':')[0]===di);
+  if(dup.length){
+    if(!confirm(dup.length+' plat(s) de ce menu sont déjà dans ton journal. Les remplacer ?'))return;
+    DB.foodLog[todayKey()].items=todayItems().filter(x=>!(x.pk&&x.pk.split(':')[0]===di));save();}
+  chosen.forEach(c=>addToJournal(todayKey(),planItem(c,scale)));
+  toast('Journée ajoutée au journal ✓');renderHome();renderFoodLog();}
+function changeWater(delta,date){const k=date||todayKey();if(!DB.foodLog[k])DB.foodLog[k]={items:[],water:0};DB.foodLog[k].water=Math.max(0,(DB.foodLog[k].water||0)+delta);save();renderWater()}
 
 /* meal generator — moteur unifié : aujourd'hui = un jour précis de la semaine */
 const DAY_NAMES=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 function todayDI(){return (new Date(todayKey()).getDay()+6)%7}
+function daySeed(di){return DB.plan.seed+(((DB.plan.daySeed||{})[di])||0)}
 function dayMenu(di){const slots=SLOTMAP[DB.profile.meals]||SLOTMAP[5];
   return slots.map((slot,pos)=>{const pool=DISHES.filter(d=>d.slot===slot);const ov=(DB.plan.overrides||{})[di+':'+pos];
-    const idx=ov!=null?((ov%pool.length)+pool.length)%pool.length:((DB.plan.seed+di*7+pos*3)%pool.length+pool.length)%pool.length;
+    const idx=ov!=null?((ov%pool.length)+pool.length)%pool.length:((daySeed(di)+di*7+pos*3)%pool.length+pool.length)%pool.length;
     return{slot,pos,dish:pool[idx],di}});
 }
+function overrideKeys(di){const o=DB.plan.overrides||{};const k=Object.keys(o);
+  return di==null?k:k.filter(x=>x.split(':')[0]===String(di))}
+function resetChoices(di){const o=DB.plan.overrides||{};overrideKeys(di).forEach(k=>delete o[k]);DB.plan.overrides=o;save()}
 function planDishes(){return dayMenu(todayDI())}
 function renderPlan(){
   const t=targets();$('#plan-target').textContent=t.kcal;$('#plan-meals-n').textContent=DB.profile.meals;
@@ -1267,6 +1359,7 @@ function renderPlan(){
   let st={k:0,p:0,c:0,f:0};chosen.forEach(c=>{const d=dishTotals(c.dish);st.k+=d.k*scale;st.p+=d.p*scale;st.c+=d.c*scale;st.f+=d.f*scale});
   $('#plan-totals').innerHTML=`<div class="between" style="margin-bottom:6px"><span class="tag" style="color:var(--accent2)">🗓️ Aujourd'hui · ${DAY_NAMES[di]} (jour ${di+1}/7)</span></div><div class="between" style="margin-bottom:10px"><b class="mono">${R(st.k)} kcal</b>${macroPills(st.p,st.c,st.f)}</div><button class="btn mini" style="width:100%" onclick="addPlanDayToJournal()">＋ Ajouter toute la journée au journal</button>`;
   $('#plan-meals').innerHTML=chosen.map((c,mi)=>mealCardHTML(c,scale,mi===0,di)).join('');
+  const rc=$('#reset-choices');if(rc)rc.style.display=overrideKeys(di).length?'inline-flex':'none';
 }
 function mealCardHTML(c,scale,open,di){
   const d=c.dish,dt=dishTotals(d);
@@ -1340,8 +1433,9 @@ function renderWeekPlan(){
   $('#week-plan').innerHTML=days.map((day,di)=>{
     const raw=day.reduce((a,c)=>a+dishTotals(c.dish).k,0);const scale=t.kcal/raw;const isToday=di===tdi;
     const body=day.map(c=>{const dt=dishTotals(c.dish);return `<div class="ing"><span>${c.dish.emoji} ${c.dish.name} <span class="muted small">· ${SLOTLBL[c.slot]}</span></span><span class="center" style="gap:10px"><span class="small mono">${R(dt.k*scale)} kcal</span><button class="btn ghost mini" onclick="openSwap(${c.pos},'${c.slot}',${di})" title="Changer">↔</button></span></div>`}).join('');
-    return `<div class="meal ${isToday?'open':''}" style="${isToday?'border-color:var(--accent)':''}"><div class="mh" onclick="if(!event.target.closest('button'))this.parentElement.classList.toggle('open')"><div style="flex:1"><b>${DAY_NAMES[di]}</b> ${isToday?'<span class="tag" style="color:var(--accent2)">aujourd\'hui</span>':''}<div class="small mono">${R(t.kcal)} kcal · ${day.length} repas</div></div><span class="muted">▾</span></div><div class="body">${body}</div></div>`;
+    return `<div class="meal ${isToday?'open':''}" style="${isToday?'border-color:var(--accent)':''}"><div class="mh" onclick="if(!event.target.closest('button'))this.parentElement.classList.toggle('open')"><div style="flex:1"><b>${DAY_NAMES[di]}</b> ${isToday?'<span class="tag" style="color:var(--accent2)">aujourd\'hui</span>':''}${overrideKeys(di).length?' <span class="tag" style="color:var(--amber)">'+overrideKeys(di).length+' choix</span>':''}<div class="small mono">${R(t.kcal)} kcal · ${day.length} repas</div></div><span class="muted">▾</span></div><div class="body">${body}</div></div>`;
   }).join('');
+  const rw=$('#reset-choices-week');if(rw)rw.style.display=overrideKeys().length?'inline-flex':'none';
 }
 
 /* ---------------- RENDER: PROGRESS ---------------- */
@@ -1400,14 +1494,26 @@ function renderProfile(){
     <div class="between"><span>Lipides <span class="small">~0,9 g/kg</span></span><b class="pill f">${t.fat} g</b></div><hr style="margin:9px 0">
     <div class="between"><span>Eau/jour</span><b class="pill">${R(t.water/1000,1)} L</b></div>`;
 }
-function saveProfile(){const p=DB.profile;p.age=+$('#pf-age').value||25;p.height=+$('#pf-height').value||178;p.weight=+$('#pf-weight').value||65;p.activity=+$('#pf-activity').value;p.surplus=+$('#pf-surplus').value;p.meals=+$('#pf-meals').value;save();renderProfile();renderHome();}
+function saveProfile(){const p=DB.profile;p.age=+$('#pf-age').value||25;p.height=+$('#pf-height').value||178;p.weight=+$('#pf-weight').value||65;p.activity=+$('#pf-activity').value;p.surplus=+$('#pf-surplus').value;p.meals=+$('#pf-meals').value;DB.profileSet=true;save();renderProfile();renderHome();}
 
 /* ---------------- NAV & EVENTS ---------------- */
 const TITLES={home:'Tableau de bord',train:'Entraînement',food:'Nutrition',prog:'Progression',profile:'Profil'};
-function go(p){$$('.page').forEach(el=>el.classList.remove('active'));$('#page-'+p).classList.add('active');
+let currentPage='home';
+function go(p,fromHistory){
+  if(!TITLES[p])p='home';
+  currentPage=p;
+  if(!fromHistory){const h='#'+p;if(location.hash!==h)history.pushState({p},'',h)}
+  $$('.page').forEach(el=>el.classList.remove('active'));$('#page-'+p).classList.add('active');
   $$('.snav,.tabbar button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));$('#htitle').textContent=TITLES[p];window.scrollTo(0,0);
   if(p==='home')renderHome();if(p==='train'){renderWeekStrip();renderExos()}if(p==='food'){const b=$('#food-seg button.on');setFoodTab(b?b.dataset.f:'log')}if(p==='prog')renderProgress();if(p==='profile')renderProfile();}
 $$('.snav,.tabbar button').forEach(b=>b.onclick=()=>go(b.dataset.p));
+/* Retour Android / navigateur : ferme d'abord la modale, puis revient à l'onglet précédent */
+window.addEventListener('popstate',e=>{
+  const m=$('.modal.show');
+  if(m){m.classList.remove('show');history.pushState({p:currentPage},'','#'+currentPage);return}
+  const p=(e.state&&e.state.p)||(location.hash||'#home').slice(1);
+  go(TITLES[p]?p:'home',true);
+});
 $$('#session-seg button').forEach(b=>b.onclick=()=>selectSession(b.dataset.s));
 $('#save-workout').onclick=saveWorkout;$('#reset-workout').onclick=()=>{$$('#exo-list .in-w,#exo-list .in-r').forEach(i=>i.value='');$$('#exo-list [data-e1]').forEach(e=>e.textContent='—');$$('#exo-list .done').forEach(b=>{b.classList.remove('on');b.classList.add('locked')});clearDraft(currentSession);updateDraftBar();stopRest();toast('Champs vidés')};
 $('#rest-skip').onclick=stopRest;$('#rest-m15').onclick=()=>{restEnd=Math.max(Date.now()+1000,restEnd-15000);updRest()};$('#rest-p15').onclick=()=>{restEnd+=15000;restDone=false;updRest()};
@@ -1427,9 +1533,18 @@ $$('#food-seg button').forEach(b=>b.onclick=()=>setFoodTab(b.dataset.f));
 $('#food-prev').onclick=()=>{const d=new Date(currentFoodDate);d.setDate(d.getDate()-1);currentFoodDate=todayKey(d);renderFoodLog()};
 $('#food-next').onclick=()=>{const d=new Date(currentFoodDate);d.setDate(d.getDate()+1);const nk=todayKey(d);if(nk<=todayKey()){currentFoodDate=nk;renderFoodLog()}};
 function dayShopLabel(){return "Aujourd'hui · "+DAY_NAMES[todayDI()]}
-$('#regen-plan').onclick=()=>{DB.plan.seed++;DB.plan.overrides={};save();renderPlan();const el=$('#shopping-list');if(el.style.display!=='none'){renderShoppingInto('shopping-list',[planDishes()],dayShopLabel())}toast('Nouveau plan 🍽️')};
+$('#regen-plan').onclick=()=>{const di=todayDI();if(!DB.plan.daySeed)DB.plan.daySeed={};DB.plan.daySeed[di]=(DB.plan.daySeed[di]||0)+1;save();renderPlan();
+  const el=$('#shopping-list');if(el.style.display!=='none'){renderShoppingInto('shopping-list',[planDishes()],dayShopLabel())}
+  const kept=overrideKeys(di).length;toast(kept?'Nouveaux plats · '+kept+' choix conservé'+(kept>1?'s':''):'Nouvelle journée 🍽️')};
+$('#reset-choices').onclick=()=>{const di=todayDI();if(!overrideKeys(di).length)return;
+  if(!confirm('Annuler tes échanges de plats pour aujourd\'hui ?'))return;
+  resetChoices(di);renderPlan();const el=$('#shopping-list');if(el.style.display!=='none'){renderShoppingInto('shopping-list',[planDishes()],dayShopLabel())}toast('Choix annulés')};
 $('#show-shopping').onclick=()=>{const el=$('#shopping-list');if(el.style.display==='none'){renderShoppingInto('shopping-list',[planDishes()],dayShopLabel());el.style.display='block';$('#show-shopping').textContent='🛒 Masquer la liste'}else{el.style.display='none';$('#show-shopping').textContent='🛒 Liste de courses (jour)'}};
-$('#regen-week').onclick=()=>{DB.plan.seed++;DB.plan.overrides={};save();renderWeekPlan();const el=$('#week-shopping-list');if(el.style.display!=='none'){renderShoppingInto('week-shopping-list',weekDays(),'7 jours')}toast('Semaine régénérée 📅')};
+$('#regen-week').onclick=()=>{DB.plan.seed++;DB.plan.daySeed={};save();renderWeekPlan();const el=$('#week-shopping-list');if(el.style.display!=='none'){renderShoppingInto('week-shopping-list',weekDays(),'7 jours')}
+  const kept=overrideKeys().length;toast(kept?'Semaine régénérée · '+kept+' choix conservé'+(kept>1?'s':''):'Semaine régénérée 📅')};
+$('#reset-choices-week').onclick=()=>{if(!overrideKeys().length)return;
+  if(!confirm('Annuler tous tes échanges de plats de la semaine ?'))return;
+  resetChoices(null);renderWeekPlan();const el=$('#week-shopping-list');if(el.style.display!=='none'){renderShoppingInto('week-shopping-list',weekDays(),'7 jours')}toast('Choix annulés')};
 $('#show-week-shopping').onclick=()=>{const el=$('#week-shopping-list');if(el.style.display==='none'){renderShoppingInto('week-shopping-list',weekDays(),'7 jours');el.style.display='block';$('#show-week-shopping').textContent='🛒 Masquer la liste'}else{el.style.display='none';$('#show-week-shopping').textContent='🛒 Liste de courses de la semaine'}};
 $('#close-swap').onclick=()=>$('#swap-modal').classList.remove('show');
 $('#water-add').onclick=()=>changeWater(250);$('#water-sub').onclick=()=>changeWater(-250);
@@ -1437,7 +1552,7 @@ $('#water-add').onclick=()=>changeWater(250);$('#water-sub').onclick=()=>changeW
 ['pf-age','pf-height','pf-weight','pf-activity','pf-surplus','pf-meals'].forEach(id=>$('#'+id).addEventListener('change',saveProfile));
 $$('#pf-sex button').forEach(b=>b.onclick=()=>{DB.profile.sex=b.dataset.v;$$('#pf-sex button').forEach(x=>x.classList.toggle('on',x===b));saveProfile()});
 
-$('#log-weight').onclick=()=>{const v=parseFloat($('#weight-input').value);if(isNaN(v)){toast('Poids invalide');return}const k=todayKey();DB.weightLog=DB.weightLog.filter(x=>x.date!==k);DB.weightLog.push({date:k,w:v});DB.weightLog.sort((a,b)=>a.date.localeCompare(b.date));DB.profile.weight=v;save();$('#weight-input').value='';renderProgress();renderProfile();renderHome();toast('Poids enregistré 📈')};
+$('#log-weight').onclick=()=>{const v=parseFloat($('#weight-input').value);if(isNaN(v)){toast('Poids invalide');return}const k=todayKey();DB.weightLog=DB.weightLog.filter(x=>x.date!==k);DB.weightLog.push({date:k,w:v});DB.weightLog.sort((a,b)=>a.date.localeCompare(b.date));DB.profile.weight=v;DB.profileSet=true;save();$('#weight-input').value='';renderProgress();renderProfile();renderHome();toast('Poids enregistré 📈')};
 
 $('#add-food-btn').onclick=()=>openAddFood(null);
 $('#close-modal').onclick=()=>$('#food-modal').classList.remove('show');
@@ -1482,13 +1597,22 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.se
 
 /* ---- Onboarding (1er lancement) ---- */
 let onbSex='h';
-function openOnboarding(){onbSex=DB.profile.sex||'h';$$('#onb-sex button').forEach(b=>b.classList.toggle('on',b.dataset.v===onbSex));$('#onb-modal').classList.add('show');setTimeout(()=>$('#onb-age').focus(),100)}
+function openOnboarding(){onbSex=DB.profile.sex||'h';$$('#onb-sex button').forEach(b=>b.classList.toggle('on',b.dataset.v===onbSex));
+  if(DB.profileSet){$('#onb-age').value=DB.profile.age;$('#onb-height').value=DB.profile.height;$('#onb-weight').value=DB.profile.weight;
+    $('#onb-activity').value=DB.profile.activity;$('#onb-meals').value=DB.profile.meals}
+  onbCheck();$('#onb-modal').classList.add('show');setTimeout(()=>$('#onb-age').focus(),100)}
 $$('#onb-sex button').forEach(b=>b.onclick=()=>{onbSex=b.dataset.v;$$('#onb-sex button').forEach(x=>x.classList.toggle('on',x===b))});
-$('#onb-start').onclick=()=>{const p=DB.profile;p.sex=onbSex;
-  p.age=+$('#onb-age').value||p.age;p.height=+$('#onb-height').value||p.height;p.weight=+$('#onb-weight').value||p.weight;
+function onbValid(){const h=+$('#onb-height').value,w=+$('#onb-weight').value;
+  return h>=120&&h<=230&&w>=30&&w<=250}
+function onbCheck(){const ok=onbValid();$('#onb-start').disabled=!ok;
+  $('#onb-hint').textContent=ok?'':'Taille et poids sont nécessaires pour calculer ton objectif.'}
+['onb-height','onb-weight'].forEach(id=>$('#'+id).addEventListener('input',onbCheck));
+$('#onb-start').onclick=()=>{if(!onbValid()){onbCheck();toast('Renseigne ta taille et ton poids');return}
+  const p=DB.profile;p.sex=onbSex;
+  p.age=+$('#onb-age').value||p.age;p.height=+$('#onb-height').value;p.weight=+$('#onb-weight').value;
   p.activity=+$('#onb-activity').value;p.meals=+$('#onb-meals').value;
-  DB.startDate=todayKey();save();$('#onb-modal').classList.remove('show');renderProfile();renderHome();go('home');toast('Profil enregistré 💪')};
-$('#onb-skip').onclick=()=>{DB.startDate=todayKey();save();$('#onb-modal').classList.remove('show')};
+  DB.startDate=todayKey();DB.profileSet=true;save();$('#onb-modal').classList.remove('show');renderProfile();renderHome();go('home');toast('Profil enregistré 💪')};
+$('#onb-skip').onclick=()=>{DB.startDate=todayKey();save();$('#onb-modal').classList.remove('show');renderHome()};
 
 /* ---- Modal accessibility: Escape closes, focus restore ---- */
 let lastFocus=null;
@@ -1504,7 +1628,15 @@ document.addEventListener('keydown',e=>{
 $$('.modal').forEach(m=>{const obs=new MutationObserver(()=>{if(m.classList.contains('show')){lastFocus=document.activeElement;const f=m.querySelector('input,select,button');f&&setTimeout(()=>f.focus&&f.focus(),60)}else{lastFocus&&lastFocus.focus&&lastFocus.focus()}});obs.observe(m,{attributes:true,attributeFilter:['class']})});
 
 // expose
-Object.assign(window,{go,selectSession,setWeek,toggleDone,discardDraft,setFoodTab,delFood,openSwap,doSwap,setLift,removeShop,clearRemoved,copyShopping,openAddFood,openEditFood,pickFoodByName,pickRecent,setQty,setMeal,addPlanMealToJournal,addPlanDayToJournal,openExoPicker,pickExo,removeExo,resetSession,addSetRow,toggleWarm,deleteSession,openOnboarding});
+Object.assign(window,{go,selectSession,setWeek,toggleDone,discardDraft,setFoodTab,openExo,setWater,delFood,openSwap,doSwap,setLift,removeShop,clearRemoved,copyShopping,openAddFood,openEditFood,pickFoodByName,pickRecent,setQty,setMeal,addPlanMealToJournal,addPlanDayToJournal,openExoPicker,pickExo,removeExo,resetSession,addSetRow,toggleWarm,deleteSession,openOnboarding});
+/* état initial : respecte le hash pour pouvoir ouvrir/recharger directement un onglet */
+(function initRoute(){
+  const h=(location.hash||'').replace('#','');
+  const p=TITLES[h]?h:'home';
+  history.replaceState({p},'','#'+p);
+  currentPage=p;
+  if(p!=='home')go(p,true);
+})();
 renderHome();renderProfile();
 if(IS_FIRST_RUN)openOnboarding();
 </script>
