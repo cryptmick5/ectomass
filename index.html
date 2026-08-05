@@ -419,6 +419,7 @@ body.offline .offbar{display:flex}
     <!-- ============ HOME ============ -->
     <section class="page active" id="page-home">
       <div class="warnbar" id="backup-warn"></div>
+      <div class="warnbar" id="home-preview" style="border-color:rgba(76,157,255,.34);background:linear-gradient(135deg,rgba(76,157,255,.13),rgba(76,157,255,.03))"></div>
       <div class="warnbar" id="profile-warn">⚠️ <span style="flex:1;min-width:170px"><b>Profil incomplet</b> — ton objectif calorique est estimé sur un profil type.</span><button class="btn ghost mini" onclick="openOnboarding()">Compléter</button></div>
       <div class="grid dash">
         <div>
@@ -443,7 +444,7 @@ body.offline .offbar{display:flex}
         </div>
         <div>
           <div class="card pad0">
-            <div style="padding:14px 16px 0"><div class="between"><h3 style="margin:0">Séance recommandée</h3><span class="tag" id="home-w-tag"></span></div><div class="small" id="home-w-name" style="margin-top:2px"></div></div>
+            <div style="padding:14px 16px 0"><div class="between"><h3 style="margin:0" id="home-w-title">Séance recommandée</h3><span class="tag" id="home-w-tag"></span></div><div class="small" id="home-w-name" style="margin-top:2px"></div></div>
             <div id="home-workout" style="padding:12px 16px 14px"></div>
           </div>
           <div class="card">
@@ -454,6 +455,7 @@ body.offline .offbar{display:flex}
           <div class="card tight">
             <div class="between"><h3 style="margin:0">Cette semaine</h3><span class="small" id="week-vol"></span></div>
             <div class="row" style="margin-top:8px;gap:6px" id="week-badges"></div>
+            <div class="small muted" id="week-legend" style="margin-top:8px"></div>
           </div>
         </div>
       </div>
@@ -782,7 +784,7 @@ function deepMerge(base,over){
 /* ---------------- DATA ---------------- */
 const DEFAULT={
   profile:{sex:'h',age:25,height:178,weight:65,activity:1.375,surplus:400,meals:5},
-  startDate:todayKey(), weightLog:[], workoutLog:{}, exoState:{}, foodLog:{}, plan:{seed:1,daySeed:{},overrides:{},date:'',removed:[],checked:[]}, view:{week:null}, recentFoods:[], customFoods:[], sessionPlan:{}, customExos:{}, draft:null, profileSet:false, lastExport:null, backupSnooze:0, rest:null,
+  startDate:todayKey(), weightLog:[], workoutLog:{}, exoState:{}, foodLog:{}, plan:{seed:1,daySeed:{},overrides:{},date:'',removed:[],checked:[]}, view:{week:null,session:'A'}, recentFoods:[], customFoods:[], sessionPlan:{}, customExos:{}, draft:null, profileSet:false, lastExport:null, backupSnooze:0, rest:null,
   stamps:{}, tombs:{}
 };
 const SYNC_SECTIONS=['profile','startDate','weightLog','workoutLog','exoState','foodLog','plan','recentFoods','customFoods','sessionPlan','customExos','profileSet'];
@@ -790,6 +792,9 @@ const SYNC_SECTIONS=['profile','startDate','weightLog','workoutLog','exoState','
 const ENTRY_SECTIONS=['workoutLog','foodLog','exoState','sessionPlan','customExos'];
 let IS_FIRST_RUN=false;try{IS_FIRST_RUN=!localStorage.getItem('ectomass_v2')}catch(e){}
 let DB=load();
+/* la prévisualisation d'une semaine est un coup d'œil, pas un réglage :
+   la laisser persister faisait diverger Entraînement et Accueil sans fin */
+if(DB.view&&DB.view.week!=null)DB.view.week=null;
 function load(){try{const r=JSON.parse(localStorage.getItem('ectomass_v2'));return r?deepMerge(clone(DEFAULT),r):clone(DEFAULT)}catch(e){return clone(DEFAULT)}}
 let saveWarned=false;
 let lastSnap={};
@@ -1130,7 +1135,7 @@ function weekWorkoutsDone(){const ws=new Date(weekStartKey());return Object.keys
 function doneThisWeek(){return new Set(weekWorkoutsDone().map(k=>DB.workoutLog[k].session)).size}
 
 /* ---------------- RENDER: HOME ---------------- */
-let currentSession='A';
+let currentSession=(DB.view&&DB.view.session)||'A';
 function renderHome(){
   const t=targets(),tot=dayTotals(todayKey());
   $('#home-target-pill').textContent=t.kcal+' kcal';$('#ring-target').textContent=t.kcal;$('#ring-eaten').textContent=R(tot.k);
@@ -1149,7 +1154,7 @@ function renderHome(){
     $('#stat-trend').style.color=(trend>=lo&&trend<=hi)?'var(--green)':(trend>hi||trend<0)?'var(--amber)':'var(--txt)';
     $('#stat-trend').title='Cible : +'+R(lo,2)+' à +'+R(hi,2)+' kg/semaine';
   }else $('#stat-trend').style.color='';
-  const pw=programWeek();
+  const pw=programWeek(),wk=currentWeekIdx(),preview=(wk!==pw);
   $('#stat-week').innerHTML=(pw+1)+'<small style="font-size:11px;color:var(--muted2)">/12</small>';
   $('#stat-streak').innerHTML=doneThisWeek()+'<small style="font-size:11px;color:#4a2408">/3</small>';
   $('#home-phase').textContent='Semaine '+(pw+1)+'/12 · '+WEEKS[pw].ph;
@@ -1158,17 +1163,34 @@ function renderHome(){
   const doneLetters=new Set(weekWorkoutsDone().map(k=>DB.workoutLog[k].session));
   const allDone=doneLetters.has('A')&&doneLetters.has('B')&&doneLetters.has('C');
   const next=['A','B','C'].find(l=>!doneLetters.has(l))||'A';
-  $('#home-w-tag').textContent=WEEKS[pw].deload?'Deload':'Semaine '+(pw+1);
-  $('#home-w-name').textContent=allDone?'✅ Semaine terminée — repos ou refais une séance':SESSIONS[next].name;
-  $('#home-workout').innerHTML=sessionExos(next).slice(0,4).map(id=>`<div class="between" style="padding:4px 0"><span>${exDef(id).n}</span><span class="small mono">${targetSets(id,pw)}×${exDef(id).rep[1]?targetReps(id,pw):'—'}</span></div>`).join('')
-    +`<button class="btn sm" style="width:100%;margin-top:10px" onclick="go('train');selectSession('${next}')">${allDone?'Refaire la séance '+next:'Démarrer la séance '+next} →</button>`;
+  /* la carte suit la séance réellement sélectionnée, pas seulement la conseillée */
+  const shown=SESSIONS[currentSession]?currentSession:next;
+  const isReco=(shown===next)&&!allDone;
+  $('#home-w-title').textContent=isReco?'Séance recommandée':'Séance sélectionnée';
+  $('#home-w-tag').textContent=WEEKS[wk].deload?'Deload':'Semaine '+(wk+1);
+  $('#home-w-name').innerHTML=esc(SESSIONS[shown].name)
+    +(doneLetters.has(shown)?' <span class="tag" style="color:var(--green)">✓ faite cette semaine</span>':'')
+    +(!isReco&&!allDone?` <span class="tag" style="color:var(--accent2)">conseillée : ${esc(next)}</span>`:'')
+    +(allDone?' <span class="tag" style="color:var(--green)">semaine terminée</span>':'');
+  $('#home-workout').innerHTML=sessionExos(shown).slice(0,4).map(id=>`<div class="between" style="padding:4px 0"><span>${esc(exDef(id).n)}</span><span class="small mono">${targetSets(id,wk)}×${exDef(id).rep[1]?targetReps(id,wk):'—'}</span></div>`).join('')
+    +`<button class="btn sm" style="width:100%;margin-top:10px" data-start-session="${esc(shown)}">${doneLetters.has(shown)?'Refaire la séance '+esc(shown):'Démarrer la séance '+esc(shown)} →</button>`;
+  /* prévisualisation d'une autre semaine : visible ici aussi, et annulable d'un geste */
+  const pb=$('#home-preview');
+  if(pb){
+    pb.style.display=preview?'flex':'none';
+    if(preview)pb.innerHTML=`👁 <span style="flex:1;min-width:160px">Tu prévisualises la <b>semaine ${wk+1}</b>. Ta semaine réelle est la ${pw+1}.</span><button class="btn ghost mini" data-clear-preview>Revenir à la ${pw+1}</button>`;
+  }
 
   // water
   renderWater();
   // week badges — by which sessions are actually done
-  $('#week-badges').innerHTML=['A','B','C'].map(w=>`<div class="wkbox ${doneLetters.has(w)?'done':''} ${w===next&&!allDone?'on':''}" style="width:auto;flex:1"><b>${w}</b><small>${doneLetters.has(w)?'✓ fait':'à faire'}</small></div>`).join('');
+  $('#week-badges').innerHTML=['A','B','C'].map(w=>{
+    const done=doneLetters.has(w),sel=(w===shown),reco=(w===next&&!allDone);
+    return `<button type="button" class="wkbox ${done?'done':''} ${sel?'on':''}" style="width:auto;flex:1" data-pick-session="${w}" aria-pressed="${sel}"
+      aria-label="Séance ${w}${done?', déjà faite cette semaine':', à faire'}${reco?', conseillée':''}${sel?', sélectionnée':''}"><b>${w}${reco?' •':''}</b><small>${done?'✓ fait':'à faire'}</small></button>`}).join('');
   const vol=weekWorkoutsDone().reduce((a,k)=>a+sessionVolume(DB.workoutLog[k]),0);
   $('#week-vol').textContent=doneLetters.size+'/3 · '+R(vol)+' kg';
+  const wl2=$('#week-legend');if(wl2)wl2.textContent=allDone?'Les trois séances sont faites — repos ou reprise libre.':'Touche une séance pour l\'ouvrir. Le point marque celle conseillée.';
 
   const pw2=$('#profile-warn');if(pw2)pw2.style.display=DB.profileSet?'none':'flex';
   const bw=$('#backup-warn');
@@ -1211,8 +1233,12 @@ function renderWeekStrip(){
   const doneWeeks=new Set(Object.keys(DB.workoutLog).map(k=>clamp(Math.floor((new Date(k)-new Date(DB.startDate))/864e5/7),0,11)));
   $('#wk-strip').innerHTML=WEEKS.map((W,i)=>`<button type="button" class="wkbox ${i===wk?'on':''} ${W.deload?'deload':''} ${doneWeeks.has(i)&&i<pw?'done':''}" data-week="${i}" aria-pressed="${i===wk}" aria-label="Semaine ${i+1}${W.deload?' (deload)':''}"><b>${i+1}${i===pw?' •':''}</b><small>${esc(W.deload?'deload':W.ph.slice(0,6))}</small></button>`).join('');
 }
-function setWeek(i){DB.view.week=(i===programWeek())?null:i;save();renderWeekStrip();renderExos();}
-function selectSession(s){currentSession=s;$$('#session-seg button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));syncTabs('#session-seg');renderExos();}
+function setWeek(i){DB.view.week=(i===programWeek())?null:i;save();renderWeekStrip();renderExos();renderHome();}
+function selectSession(s){
+  if(!SESSIONS[s])s='A';
+  currentSession=s;DB.view.session=s;save();
+  $$('#session-seg button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));syncTabs('#session-seg');
+  renderExos();}
 function lastSessionData(sess){const keys=Object.keys(DB.workoutLog).filter(k=>DB.workoutLog[k].session===sess).sort();return keys.length?DB.workoutLog[keys[keys.length-1]].exos:{}}
 /* ---- Brouillon de séance : rien de saisi ne doit être perdu ---- */
 function getDraft(){const d=DB.draft;return (d&&d.date===todayKey())?d:null}
@@ -2361,7 +2387,7 @@ $('#confirm-modal').onclick=e=>{if(e.target.id==='confirm-modal')closeModal('#co
 
 /* ---- Délégation d'événements : les contenus saisis ne transitent plus par des attributs ---- */
 document.addEventListener('click',e=>{
-  const t=e.target.closest('[data-open-exo],[data-pick-exo],[data-food],[data-recent],[data-edit-food],[data-del-food],[data-swap],[data-swap-open],[data-shop],[data-rmshop],[data-meal-toggle],[data-week],[data-lift],[data-del-session],[data-rir]');
+  const t=e.target.closest('[data-open-exo],[data-pick-exo],[data-food],[data-recent],[data-edit-food],[data-del-food],[data-swap],[data-swap-open],[data-shop],[data-rmshop],[data-meal-toggle],[data-week],[data-lift],[data-del-session],[data-rir],[data-pick-session],[data-start-session],[data-clear-preview]');
   if(!t)return;
   const d=t.dataset;
   if(d.openExo!==undefined){openExo(+d.openExo);return}
@@ -2379,6 +2405,9 @@ document.addEventListener('click',e=>{
   if(d.lift!==undefined){setLift(d.lift);return}
   if(d.delSession!==undefined){deleteSession(d.delSession);return}
   if(d.rir!==undefined){setRir(d.rir);return}
+  if(d.pickSession!==undefined){selectSession(d.pickSession);go('train');return}
+  if(d.startSession!==undefined){selectSession(d.startSession);go('train');return}
+  if(d.clearPreview!==undefined){setWeek(programWeek());toast('Retour à ta semaine réelle');return}
 });
 
 // expose
