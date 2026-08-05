@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tests — EctoMass</title>
+<style>
+:root{--bg:#080b12;--card:#141a26;--line:#2a3446;--txt:#eef3f9;--muted:#9fadc2;
+  --green:#31c56d;--red:#ff5a52;--amber:#ffb020;--accent:#ff6b35}
+*{box-sizing:border-box}
+body{margin:0;padding:20px;background:var(--bg);color:var(--txt);
+  font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+h1{font-size:22px;letter-spacing:-.02em;margin:0 0 4px}
+.sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+#summary{position:sticky;top:0;background:var(--bg);padding:10px 0 14px;z-index:5;border-bottom:1px solid var(--line);margin-bottom:14px}
+.pill{display:inline-block;padding:5px 12px;border-radius:20px;font-weight:750;font-size:13px;margin-right:8px}
+.pill.ok{background:rgba(49,197,109,.16);color:var(--green)}
+.pill.ko{background:rgba(255,90,82,.16);color:var(--red)}
+.pill.n{background:#242d3f;color:var(--muted)}
+.suite{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+.suite h2{font-size:15px;margin:0 0 10px;letter-spacing:-.01em}
+.t{display:flex;gap:10px;padding:5px 0;font-size:13.5px;align-items:flex-start;border-top:1px solid rgba(255,255,255,.04)}
+.t:first-of-type{border-top:none}
+.t .m{flex-shrink:0;width:18px;font-weight:800}
+.t.pass .m{color:var(--green)}
+.t.fail .m{color:var(--red)}
+.t .why{display:block;color:var(--red);font-size:12.5px;margin-top:3px;font-family:ui-monospace,monospace;white-space:pre-wrap}
+iframe{position:fixed;left:-9999px;top:0;width:420px;height:900px;border:0}
+button{font:inherit;background:var(--accent);color:#160a03;border:none;border-radius:10px;
+  padding:9px 16px;font-weight:750;cursor:pointer}
+.muted{color:var(--muted)}
+</style>
+</head>
+<body>
+<h1>Tests EctoMass</h1>
+<div class="sub">Ouvre ce fichier via HTTP (<code>python -m http.server</code>), pas en <code>file://</code>.
+Chaque groupe repart d'une application vierge.</div>
+<div id="summary"><span class="pill n" id="p-run">démarrage…</span><button id="rerun" hidden>Relancer</button></div>
+<div id="out"></div>
+<iframe id="app" src="index.html" title="application testée"></iframe>
+
+<script>
+"use strict";
+/* ============================================================
+   Micro-runner : aucune dépendance, tout tient dans ce fichier.
+   L'application est chargée dans une iframe de même origine ;
+   on atteint son état interne via app.eval(...) parce que les
+   `let` de haut niveau ne sont pas exposés sur window.
+   ============================================================ */
+const SUITES = [];
+function suite(nom, fn) { SUITES.push({ nom, fn, tests: [] }); }
+let CURRENT = null;
+function test(nom, fn) { CURRENT.tests.push({ nom, fn }); }
+
+function ok(cond, msg) { if (!cond) throw new Error(msg || 'attendu vrai'); }
+function eq(a, b, msg) {
+  if (a !== b) throw new Error((msg ? msg + ' — ' : '') + 'attendu ' + JSON.stringify(b) + ', obtenu ' + JSON.stringify(a));
+}
+function near(a, b, tol, msg) {
+  if (Math.abs(a - b) > tol) throw new Error((msg ? msg + ' — ' : '') + a + ' hors de ' + b + ' ± ' + tol);
+}
+function match(str, re, msg) {
+  if (!re.test(String(str))) throw new Error((msg ? msg + ' — ' : '') + '« ' + String(str).slice(0, 90) + ' » ne correspond pas à ' + re);
+}
+
+/* --- accès à l'application --- */
+const frame = document.getElementById('app');
+let APP = null;
+const ev = expr => APP.eval(expr);            // évalue dans la portée de l'app
+const DB = () => ev('DB');
+const $$ = sel => APP.document.querySelector(sel);
+const all = sel => [...APP.document.querySelectorAll(sel)];
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+/* recharge l'app avec un stockage vide et un profil connu */
+function fresh() {
+  return new Promise(resolve => {
+    try { frame.contentWindow.localStorage.clear(); } catch (e) {}
+    frame.onload = async () => {
+      APP = frame.contentWindow;
+      await wait(60);
+      ev("closeModal('#onb-modal')");
+      ev("DB.profile={sex:'h',age:29,height:180,weight:66,activity:1.375,surplus:400,meals:5};"
+       + "DB.profileSet=true;DB.startDate=todayKey();primeSnapshot();save()");
+      ev('renderHome();renderProfile()');
+      await wait(40);
+      resolve(APP);
+    };
+    frame.src = 'index.html?t=' + Date.now();
+  });
+}
+
+/* redémarre SANS vider le stockage : l'état en cours est persisté d'abord.
+   Indispensable pour tester ce qui se joue au démarrage — sinon on injecte
+   l'état après le boot et on ne teste rien. */
+function reboot() {
+  return new Promise(resolve => {
+    ev("save();localStorage.setItem('ectomass_v2',JSON.stringify(DB))");
+    frame.onload = async () => {
+      APP = frame.contentWindow;
+      await wait(80);
+      ev("closeModal('#onb-modal')");
+      resolve(APP);
+    };
+    frame.src = 'index.html?t=' + Date.now();
+  });
+}
+
+/* ============================================================
+   1. Socle de données
+   ============================================================ */
+suite('Socle de données', () => {
+  test('deepMerge conserve les champs absents de la sauvegarde', () => {
+    const r = ev("deepMerge({a:{x:1,y:2},b:[1,2],c:0,d:false},{a:{x:9}})");
+    eq(r.a.y, 2, 'champ non fourni perdu');
+    eq(r.a.x, 9);
+    eq(r.c, 0, 'un zéro doit survivre');
+    eq(r.d, false, 'un false doit survivre');
+    eq(r.b.length, 2, 'tableau écrasé');
+  });
+
+  test('un profil ancien récupère les nouveaux champs du schéma', () => {
+    const r = ev("deepMerge(clone(DEFAULT),{profile:{weight:80}})");
+    eq(r.profile.height, 178, 'valeur par défaut perdue');
+    eq(r.profile.weight, 80);
+    ok(r.plan && r.plan.seed === 1, 'section plan absente');
+    ok(r.view && 'session' in r.view, 'view.session absent');
+  });
+
+  test('save() horodate uniquement ce qui a changé', () => {
+    ev("primeSnapshot();DB.stamps={};DB.foodLog['2030-01-01']={items:[],water:0};save()");
+    const st = ev('DB.stamps');
+    ok(st['foodLog:2030-01-01'] > 0, 'entrée non horodatée');
+    ok(!st['weightLog'], 'section inchangée horodatée à tort');
+  });
+
+  test('une suppression laisse une pierre tombale', () => {
+    ev("primeSnapshot();delete DB.foodLog['2030-01-01'];save()");
+    ok(ev("DB.tombs['foodLog:2030-01-01']") > 0, 'tombstone absent');
+  });
+
+  test('une sauvegarde impossible ne casse pas l\'application', () => {
+    const r = ev("(function(){var o=localStorage.setItem;localStorage.setItem=function(){throw new Error('plein')};"
+              + "var e=null;try{save()}catch(x){e=x}localStorage.setItem=o;return e===null})()");
+    ok(r, 'save() a laissé remonter une exception');
+  });
+});
+
+/* ============================================================
+   2. Synchronisation : fusion multi-appareils
+   ============================================================ */
+suite('Synchronisation (fusion)', () => {
+  test('le token ne part jamais dans le gist', () => {
+    ev("syncCfg.token='ghp_secret_ne_doit_pas_fuiter';persistSyncCfg()");
+    const payload = JSON.stringify(ev('collectState()'));
+    ok(payload.indexOf('ghp_secret') === -1, 'le token est présent dans le payload');
+    ok(payload.indexOf('token') === -1, 'la clé token est présente dans le payload');
+    ev("syncCfg.token='';persistSyncCfg()");
+  });
+
+  test('une entrée distante inconnue est ajoutée', () => {
+    ev("primeSnapshot();save()");
+    const t = Date.now();
+    ev("applyRemote({v:2,savedAt:" + t + ",stamps:{'foodLog:2099-01-01':" + t + "},tombs:{},"
+     + "data:{foodLog:{'2099-01-01':{items:[{name:'Distant',k:500,p:1,c:2,f:3}],water:0}},profile:{},weightLog:[]}})");
+    ok(ev("!!DB.foodLog['2099-01-01']"), 'entrée distante non fusionnée');
+  });
+
+  test('une entrée locale plus récente n\'est pas écrasée', () => {
+    ev("DB.foodLog['2030-05-05']={items:[{name:'Local',k:1,p:0,c:0,f:0}],water:0};save()");
+    const vieux = Date.now() - 100000;
+    ev("applyRemote({v:2,savedAt:" + vieux + ",stamps:{'foodLog:2030-05-05':" + vieux + "},tombs:{},"
+     + "data:{foodLog:{'2030-05-05':{items:[],water:9}},profile:{},weightLog:[]}})");
+    eq(ev("DB.foodLog['2030-05-05'].items.length"), 1, 'le cloud plus ancien a gagné');
+  });
+
+  test('une suppression locale n\'est pas ressuscitée par le cloud', () => {
+    ev("primeSnapshot();delete DB.foodLog['2030-05-05'];save()");
+    const vieux = Date.now() - 100000;
+    ev("applyRemote({v:2,savedAt:" + vieux + ",stamps:{'foodLog:2030-05-05':" + vieux + "},tombs:{},"
+     + "data:{foodLog:{'2030-05-05':{items:[{name:'X',k:1,p:0,c:0,f:0}],water:0}},profile:{},weightLog:[]}})");
+    ok(ev("DB.foodLog['2030-05-05']===undefined"), 'entrée supprimée ressuscitée');
+  });
+
+  test('une section vide côté cloud n\'écrase pas le profil local', () => {
+    const futur = Date.now() + 100000;
+    ev("applyRemote({v:2,savedAt:" + futur + ",stamps:{profile:" + futur + "},tombs:{},"
+     + "data:{profile:{},foodLog:{},weightLog:[]}})");
+    ok(ev('DB.profile.height') > 0, 'profil écrasé par une section vide');
+  });
+
+  test('les pesées fusionnent par date sans doublon', () => {
+    ev("DB.weightLog=[{date:'2026-01-01',w:60}];primeSnapshot();save()");
+    const t = Date.now();
+    ev("applyRemote({v:2,savedAt:" + t + ",stamps:{weightLog:" + t + "},tombs:{},"
+     + "data:{weightLog:[{date:'2026-01-02',w:61}],profile:{},foodLog:{}}})");
+    const dates = ev('DB.weightLog.map(function(x){return x.date})');
+    eq(dates.length, 2, 'fusion incorrecte');
+    ok(dates.indexOf('2026-01-01') >= 0 && dates.indexOf('2026-01-02') >= 0);
+  });
+
+  test('un token qui n\'en est pas un est refusé', () => {
+    ev("go('profile');renderSyncCard()");
+    $$('#sync-token').value = 'pas-un-token';
+    ev('connectSync()');
+    eq(ev('syncCfg.token'), '', 'token invalide accepté');
+  });
+});
+
+/* ============================================================
+   3. Rendu : contenus saisis par l'utilisateur
+   ============================================================ */
+suite('Sécurité du rendu', () => {
+  const hostile = 'Pâtes "maison" <img src=x onerror=BOOM>';
+
+  test('un nom hostile s\'affiche comme du texte dans le journal', async () => {
+    ev("DB.foodLog[todayKey()]={items:[{name:" + JSON.stringify(hostile)
+     + ",meal:'bf',qty:1,unit:'pc',per:[100,1,2,3],k:100,p:1,c:2,f:3}],water:0};save();go('food')");
+    await wait(60);
+    const b = $$('#food-log-list .logitem b');
+    ok(b, 'ligne de journal absente');
+    eq(b.textContent, hostile, 'le nom a été altéré ou interprété');
+    eq(all('#food-log-list img').length, 0, 'une balise img a été injectée');
+  });
+
+  test('la recherche passe par des attributs data, pas par onclick', async () => {
+    ev("DB.customFoods=[{n:" + JSON.stringify(hostile) + ",u:'g',def:100,cat:'Perso',per:[350,12,70,2]}];save();"
+     + "openAddFood('bf');renderFoodSearch('Pâtes')");
+    await wait(60);
+    const btn = $$('#food-search-results [data-food]');
+    ok(btn, 'aucun résultat');
+    eq(btn.tagName, 'BUTTON', 'le résultat n\'est pas un bouton');
+    ok(!btn.getAttribute('onclick'), 'onclick inline encore présent');
+    eq(btn.dataset.food, hostile, 'le nom est tronqué dans le data-attribut');
+    eq(all('#food-search-results img').length, 0, 'injection dans la liste de résultats');
+    ev("closeModal('#food-modal')");
+  });
+
+  test('esc() neutralise les cinq caractères sensibles', () => {
+    eq(ev('esc(\'<>&"\\\'\')'), '&lt;&gt;&amp;&quot;&#39;');
+  });
+
+  test('aucune zone cliquable n\'est un div sans rôle', async () => {
+    for (const p of ['home', 'train', 'food', 'prog', 'profile']) {
+      ev("go('" + p + "')");
+      await wait(40);
+      const mauvais = all('div[onclick]').filter(x => !x.hasAttribute('role'));
+      eq(mauvais.length, 0, 'div cliquable sans rôle sur ' + p);
+    }
+  });
+});
+
+/* ============================================================
+   4. Suivi de poids
+   ============================================================ */
+suite('Suivi de poids', () => {
+  test('une pesée par jour : la seconde du jour remplace la première', () => {
+    ev("DB.weightLog=[];setWeightAt(todayKey(),66);setWeightAt(todayKey(),66.5)");
+    eq(ev('DB.weightLog.length'), 1, 'deux entrées pour le même jour');
+    eq(ev('DB.weightLog[0].w'), 66.5);
+  });
+
+  test('setWeightAt signale un remplacement', () => {
+    eq(ev("setWeightAt(todayKey(),67)"), 66.5, 'ancienne valeur non retournée');
+    eq(ev("setWeightAt('2026-01-15',60)"), null, 'création signalée comme remplacement');
+  });
+
+  test('une pesée à une date passée débloque la courbe', async () => {
+    ev("DB.weightLog=[];setWeightAt(todayKey(),66);go('prog')");
+    await wait(60);
+    ok(!$$('#weight-chart').offsetParent, 'courbe affichée avec une seule pesée');
+    match($$('#weight-empty').textContent, /autre date|change la date/i,
+          'le message n\'explique pas comment débloquer la courbe');
+    ev("setWeightAt('2026-08-01',65.4);renderProgress()");
+    await wait(60);
+    ok($$('#weight-chart').offsetParent, 'courbe toujours masquée avec deux dates');
+    eq(all('#weight-list .wrow').length, 2, 'liste des pesées incomplète');
+  });
+
+  test('une pesée dans le futur est refusée', async () => {
+    ev("go('prog')"); await wait(40);
+    const avant = ev('DB.weightLog.length');
+    $$('#weight-date').value = '2099-01-01';
+    $$('#weight-input').value = '70';
+    $$('#log-weight').click();
+    await wait(60);
+    eq(ev('DB.weightLog.length'), avant, 'pesée future enregistrée');
+  });
+
+  test('le poids du profil suit la pesée la plus récente', () => {
+    ev("DB.weightLog=[];setWeightAt('2026-01-01',60);setWeightAt('2026-06-01',64)");
+    eq(ev('DB.profile.weight'), 64);
+  });
+
+  test('supprimer une pesée met le profil à jour', () => {
+    ev("delWeight('2026-06-01')");
+    eq(ev('DB.weightLog.length'), 1);
+    eq(ev('DB.profile.weight'), 60);
+  });
+});
+
+/* ============================================================
+   5. Cohérence des chiffres affichés
+   ============================================================ */
+suite('Cohérence des chiffres', () => {
+  test('la cible de reps reste dans la plage annoncée de l\'exercice', () => {
+    const hors = ev(
+      "Object.keys(EX).filter(function(id){var e=EX[id];if(!e.rep[1])return false;"
+    + "for(var w=0;w<12;w++){var t=targetReps(id,w);if(t>e.rep[1]||t<e.rep[0])return true}return false})"
+    + ".map(function(id){return EX[id].n})");
+    eq(hors.length, 0, 'exercices hors plage : ' + hors.slice(0, 4).join(', '));
+  });
+
+  test('le nombre de séries reste entre 2 et 5', () => {
+    const hors = ev("Object.keys(EX).filter(function(id){for(var w=0;w<12;w++){var s=targetSets(id,w);"
+                  + "if(s<2||s>5)return true}return false})");
+    eq(hors.length, 0);
+  });
+
+  test('un seul barème juge la tendance de poids', () => {
+    ev("DB.weightLog=[{date:'2026-07-25',w:64.8},{date:'2026-07-29',w:65.4},"
+     + "{date:'2026-08-02',w:65.9},{date:'2026-08-05',w:66.4}];save()");
+    const t = ev('weightTrendPerWeek()');
+    ok(t != null, 'tendance non calculée');
+    const v = ev('trendVerdict(' + t + ')');
+    ev('renderProgress();renderHome()');
+    const conseil = $$('#prog-advice').textContent;
+    const dansLaCible = /dans la cible/.test(conseil);
+    eq(dansLaCible, v.k === 'ideal', 'le texte de Progression contredit le verdict partagé');
+    const couleur = APP.getComputedStyle($$('#stat-trend')).color;
+    const vert = couleur.indexOf('49, 197, 109') >= 0;
+    eq(vert, v.k === 'ideal', 'la couleur de l\'Accueil contredit le verdict partagé');
+  });
+
+  test('la fourchette cible s\'exprime en pourcentage du poids', () => {
+    const b = ev('trendBand()');
+    const w = ev('DB.weightLog[DB.weightLog.length-1].w');
+    near(b.lo, w * 0.0025, 0.01);
+    near(b.hi, w * 0.005, 0.01);
+  });
+
+  test('les PR se reconstruisent depuis l\'historique', async () => {
+    const ids = ev('Object.keys(EX).slice(0,3)');
+    ev("(function(){var e={};" + JSON.stringify(ids) + ".forEach(function(id){e[id]=[{w:80,r:10}]});"
+     + "DB.workoutLog['2026-08-04']={session:'A',week:0,exos:e,ts:1};DB.exoState={};save()})()");
+    ev("go('prog')"); await wait(80);
+    eq(all('#pr-list .between').length, 3, 'aucun record reconstruit');
+    ok(!/— kg/.test($$('#lift-stats').textContent), '1RM estimé vide malgré des séances');
+  });
+
+  test('l\'objectif kcal est identique partout', async () => {
+    ev("go('home')"); await wait(50);
+    const anneau = $$('#ring-target').textContent.trim();
+    const pastille = $$('#home-target-pill').textContent.trim();
+    const cible = String(ev('targets().kcal'));
+    eq(anneau, cible);
+    ok(pastille.indexOf(cible) >= 0, 'pastille : ' + pastille);
+    ev("go('profile')"); await wait(50);
+    ok($$('#profile-results').textContent.indexOf(cible) >= 0, 'objectif différent sur le Profil');
+  });
+});
+
+/* ============================================================
+   6. Libellés
+   ============================================================ */
+suite('Libellés', () => {
+  test('les phases du programme ne sont pas tronquées', () => {
+    const ph = ev('WEEKS.map(function(w){return phShort(w.ph)})');
+    ok(!ph.some(x => /Adapta$|Intens$/.test(x)), 'mot coupé : ' + ph.join(', '));
+    eq(ev("phShort('Deload / test')") === ev("phShort('Deload')"), false,
+       '« Deload / test » indiscernable d\'un deload');
+  });
+
+  test('les groupes musculaires sont normalisés', () => {
+    const g = ev("[...new Set(Object.values(EX).flatMap(function(e){return e.m||[]}).map(muscleGroup))]");
+    ok(!g.some(x => x.indexOf('(') >= 0), 'sous-groupe non fusionné : ' + g.filter(x => x.indexOf('(') >= 0));
+  });
+
+  test('le sélecteur de force distingue les exercices homonymes', async () => {
+    const ids = ev("Object.keys(EX).filter(function(id){return /^Développé/.test(EX[id].n)}).slice(0,4)");
+    ok(ids.length >= 2, 'jeu de test insuffisant');
+    ev("(function(){var e={};" + JSON.stringify(ids) + ".forEach(function(id){e[id]=[{w:50,r:8}]});"
+     + "DB.workoutLog[todayKey()]={session:'A',week:0,exos:e,ts:1};save()})()");
+    ev("go('prog')"); await wait(80);
+    const chips = all('#lift-seg .chip').map(c => c.textContent);
+    eq(new Set(chips).size, chips.length, 'libellés en double : ' + chips.join(' | '));
+  });
+});
+
+/* ============================================================
+   7. Séance
+   ============================================================ */
+suite('Séance', () => {
+  test('la séance sélectionnée survit à un rechargement', async () => {
+    ev("go('train');selectSession('C')");
+    eq(ev('DB.view.session'), 'C', 'sélection non persistée');
+    await reboot();
+    eq(ev('currentSession'), 'C', 'sélection perdue au démarrage');
+  });
+
+  test('les badges de l\'accueil reflètent la sélection', async () => {
+    ev("selectSession('C');go('home')"); await wait(60);
+    const b = all('#week-badges [data-pick-session]');
+    eq(b.length, 3);
+    ok(b.every(x => x.tagName === 'BUTTON'), 'badges non focusables');
+    eq(b[2].classList.contains('on'), true, 'la séance C n\'est pas marquée sélectionnée');
+    b[1].click(); await wait(80);
+    eq(ev('currentSession'), 'B');
+    eq(ev('currentPage'), 'train', 'le badge n\'ouvre pas l\'entraînement');
+  });
+
+  test('la prévisualisation de semaine est visible sur les deux écrans', async () => {
+    ev('setWeek(4)'); await wait(60);
+    eq(ev('DB.view.week'), 4);
+    ev("go('home')"); await wait(60);
+    match($$('#home-w-tag').textContent, /5/, 'l\'Accueil ignore la semaine prévisualisée');
+    ok($$('#home-preview').style.display === 'flex', 'bandeau de prévisualisation absent');
+  });
+
+  test('la prévisualisation ne survit pas à un redémarrage', async () => {
+    ev("DB.view.week=7;save()");
+    eq(ev('DB.view.week'), 7, 'prévisualisation non écrite');
+    await reboot();
+    eq(ev('DB.view.week'), null, 'prévisualisation collante d\'une session à l\'autre');
+  });
+
+  test('une charge aberrante est ramenée au plafond', async () => {
+    ev("go('train')"); await wait(80);
+    const r = all('#exo-list .exo.open .setrow[data-exo]')[0];
+    ok(r, 'aucune série visible');
+    const w = r.querySelector('.in-w'), reps = r.querySelector('.in-r');
+    w.value = '9999'; w.dispatchEvent(new APP.Event('blur'));
+    await wait(40);
+    eq(w.value, '500', 'plafond non appliqué');
+    w.value = '40'; reps.value = '10';
+    w.dispatchEvent(new APP.Event('input', { bubbles: true }));
+    reps.dispatchEvent(new APP.Event('input', { bubbles: true }));
+    await wait(40);
+    ok(r.querySelector('[data-e1]').textContent !== '—', '1RM estimé non calculé');
+  });
+
+  test('notes et RIR sont enregistrés avec la séance', async () => {
+    $$('#session-notes').value = 'épaule sensible';
+    $$('#session-notes').dispatchEvent(new APP.Event('input'));
+    $$('#rir-host [data-rir="2"]').click();
+    await wait(500);
+    eq(ev('collectRir()'), '2', 'RIR non capté');
+    await ev('saveWorkout()');
+    await wait(200);
+    const log = ev("DB.workoutLog[todayKey()]");
+    ok(log, 'séance non enregistrée');
+    eq(log.notes, 'épaule sensible', 'notes perdues');
+    eq(log.rir, '2', 'RIR perdu');
+  });
+
+  test('la note apparaît dans l\'historique', async () => {
+    ev("go('prog')"); await wait(80);
+    ok(all('#workout-history .hist-note').length > 0, 'note absente de l\'historique');
+  });
+});
+
+/* ============================================================
+   8. Dialogues et annulation
+   ============================================================ */
+suite('Dialogues et annulation', () => {
+  test('aucun confirm() natif ne subsiste', async () => {
+    const res = await ev("(function(){return fetch('index.html').then(function(r){return r.text()})})()");
+    const sansCommentaires = res.replace(/\/\*[\s\S]*?\*\//g, '');
+    ok(!/[^s.]\bconfirm\s*\(/.test(sansCommentaires.replace(/askConfirm/g, '')),
+       'un confirm() natif est encore présent');
+  });
+
+  test('la sheet de confirmation résout à false quand on annule', async () => {
+    const p = ev("askConfirm('test')");
+    await wait(60);
+    ok($$('#confirm-modal').classList.contains('show'), 'sheet non ouverte');
+    ok(APP.document.body.classList.contains('modal-open'), 'scroll d\'arrière-plan non verrouillé');
+    ok($$('.app').hasAttribute('inert'), 'arrière-plan non inerte');
+    $$('#cf-cancel').click();
+    await wait(80);
+    eq(await p, false);
+    ok(!APP.document.body.classList.contains('modal-open'), 'scroll non restauré');
+    ok(!$$('.app').hasAttribute('inert'), 'inert non retiré');
+  });
+
+  test('Échap ferme la modale du dessus', async () => {
+    ev("openModal('#plate-modal')"); await wait(60);
+    APP.document.dispatchEvent(new APP.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await wait(60);
+    ok(!$$('#plate-modal').classList.contains('show'), 'modale toujours ouverte');
+    eq(all('.modal.show').length, 0);
+  });
+
+  test('supprimer un aliment est annulable', async () => {
+    ev("DB.foodLog[todayKey()]={items:[{name:'Riz',meal:'bf',qty:1,unit:'pc',per:[100,1,2,3],k:100,p:1,c:2,f:3}],water:0};"
+     + "save();go('food')");
+    await wait(80);
+    $$('[data-del-food]').click();
+    eq(ev("DB.foodLog[todayKey()].items.length"), 0, 'suppression non immédiate');
+    await wait(200);
+    const undo = $$('#toast .undo');
+    ok(undo, 'aucun bouton Annuler proposé');
+    undo.click(); await wait(80);
+    eq(ev("DB.foodLog[todayKey()].items.length"), 1, 'annulation sans effet');
+  });
+
+  test('un toast d\'erreur n\'est pas vert', async () => {
+    ev("TOAST_Q.length=0;toastBusy=false;toast('erreur','err')");
+    await wait(120);
+    ok($$('#toast').className.indexOf('err') >= 0, 'type de toast ignoré');
+  });
+});
+
+/* ============================================================
+   9. Accessibilité
+   ============================================================ */
+suite('Accessibilité', () => {
+  test('la navigation porte aria-current', async () => {
+    ev("go('food')"); await wait(60);
+    eq($$('.tabbar [data-p=food]').getAttribute('aria-current'), 'page');
+    eq($$('.tabbar [data-p=home]').getAttribute('aria-current'), null);
+  });
+
+  test('les segments sont déclarés comme onglets', async () => {
+    ev("setFoodTab('plan')"); await wait(60);
+    const tabs = all('#food-seg [role=tab]');
+    eq(tabs.length, 3, 'role=tab absent');
+    eq(tabs.find(t => t.dataset.f === 'plan').getAttribute('aria-selected'), 'true');
+    eq(tabs.find(t => t.dataset.f === 'log').getAttribute('aria-selected'), 'false');
+    eq(tabs.find(t => t.dataset.f === 'plan').tabIndex, 0, 'tabindex roving absent');
+  });
+
+  test('les graphiques ont une alternative textuelle chiffrée', async () => {
+    ev("go('prog')"); await wait(120);
+    const lbl = $$('#weight-chart').getAttribute('aria-label');
+    ok(lbl && lbl.length > 5, 'aria-label absent sur la courbe de poids');
+    ['#ring', '#muscle-chart', '#lift-chart'].forEach(s => {
+      ok($$(s).getAttribute('aria-label'), 'aria-label absent sur ' + s);
+      eq($$(s).getAttribute('role'), 'img');
+    });
+  });
+
+  test('aucun bouton n\'est imbriqué dans un autre', async () => {
+    for (const p of ['home', 'train', 'food', 'prog', 'profile']) {
+      ev("go('" + p + "')"); await wait(50);
+      eq(all('button button').length, 0, 'boutons imbriqués sur ' + p);
+    }
+    ev("setFoodTab('plan')"); await wait(60);
+    eq(all('button button').length, 0, 'boutons imbriqués dans les menus');
+  });
+
+  test('le lien d\'évitement existe', () => {
+    ok($$('.skip'), 'lien d\'évitement absent');
+    eq($$('main') !== null, true, 'repère <main> absent');
+  });
+
+  test('aucun texte sous 11 px', async () => {
+    const petits = ev("(function(){var out=[];"
+      + "[].forEach.call(document.querySelectorAll('body *'),function(el){"
+      + "  if(!el.offsetParent&&el.tagName!=='BODY')return;"
+      + "  if(!el.textContent||!el.textContent.trim())return;"
+      + "  var fs=parseFloat(getComputedStyle(el).fontSize);"
+      + "  if(fs&&fs<11)out.push(el.className+' '+fs+'px')});"
+      + "return [...new Set(out)]})()");
+    eq(petits.length, 0, 'texte trop petit : ' + petits.slice(0, 5).join(', '));
+  });
+});
+
+/* ============================================================
+   10. Nutrition
+   ============================================================ */
+suite('Nutrition', () => {
+  test('ajouter un aliment met à jour le journal et l\'accueil', async () => {
+    ev("DB.foodLog={};save();openAddFood('bf');renderFoodSearch('riz')");
+    await wait(80);
+    const btn = $$('#food-search-results [data-food]');
+    ok(btn, 'recherche sans résultat');
+    btn.click(); await wait(80);
+    ok($$('#fm-editor').offsetParent, 'éditeur de portion non ouvert');
+    $$('#fm-confirm').click(); await wait(100);
+    eq(all('#food-log-list .logitem').length, 1, 'aliment absent du journal');
+    const k = ev("dayTotals(todayKey()).k");
+    ok(k > 0, 'calories du journal restées à zéro');
+    ev("go('home')"); await wait(60);
+    eq($$('#ring-eaten').textContent, String(ev('R(dayTotals(todayKey()).k)')),
+       'l\'anneau de l\'accueil ne suit pas le journal');
+  });
+
+  test('les macros du journal correspondent à la somme des lignes', () => {
+    const t = ev("dayTotals(todayKey())");
+    const somme = ev("(DB.foodLog[todayKey()].items||[]).reduce(function(a,i){"
+                   + "return {k:a.k+i.k,p:a.p+i.p,c:a.c+i.c,f:a.f+i.f}},{k:0,p:0,c:0,f:0})");
+    near(t.k, somme.k, 0.01); near(t.p, somme.p, 0.01);
+    near(t.c, somme.c, 0.01); near(t.f, somme.f, 0.01);
+  });
+
+  test('le menu du jour est calibré sur l\'objectif calorique', async () => {
+    ev("setFoodTab('plan')"); await wait(120);
+    ok(all('#plan-meals .meal').length > 0, 'aucun menu généré');
+    const chosen = ev('planDishes()');
+    const scale = ev('planScale(planDishes())');
+    const total = ev("(function(){var c=planDishes(),s=planScale(c);"
+                   + "return c.reduce(function(a,x){return a+dishTotals(x.dish).k*s},0)})()");
+    near(total, ev('targets().kcal'), ev('targets().kcal') * 0.02, 'menu hors de l\'objectif');
+  });
+
+  test('la semaine contient sept jours', async () => {
+    ev("setFoodTab('week')"); await wait(150);
+    eq(all('#week-plan .meal').length, 7);
+  });
+
+  test('la liste de courses se coche', async () => {
+    ev("setFoodTab('plan');openShopping([planDishes()],'test')"); await wait(120);
+    const l = all('#shop-body [data-shop]');
+    ok(l.length > 0, 'liste de courses vide');
+    eq(l[0].tagName, 'BUTTON', 'ligne non focusable');
+    l[0].click(); await wait(60);
+    ok(all('#shop-body .shop-row.checked').length > 0, 'cocher un article n\'a aucun effet');
+    ev("closeModal('#shop-modal')");
+  });
+});
+
+/* ============================================================
+   11. Profil
+   ============================================================ */
+suite('Profil', () => {
+  test('une taille hors plage est ramenée et signalée', async () => {
+    ev("go('profile')"); await wait(60);
+    $$('#pf-height').value = '400';
+    $$('#pf-height').dispatchEvent(new APP.Event('change'));
+    await wait(60);
+    eq(ev('DB.profile.height'), 230, 'valeur hors plage acceptée');
+    eq($$('#pf-height').value, '230', 'champ non corrigé visuellement');
+  });
+
+  test('un champ vidé conserve l\'ancienne valeur', async () => {
+    const avant = ev('DB.profile.age');
+    $$('#pf-age').value = '';
+    $$('#pf-age').dispatchEvent(new APP.Event('change'));
+    await wait(60);
+    eq(ev('DB.profile.age'), avant, 'repli silencieux sur une valeur par défaut');
+  });
+
+  test('les macros suivent le poids', () => {
+    ev("DB.profile.weight=70;save()");
+    eq(ev('targets().protein'), 140, 'protéines ≠ 2 g/kg');
+    eq(ev('targets().fat'), 63, 'lipides ≠ 0,9 g/kg');
+  });
+
+  test('l\'export contient les données mais pas le token', () => {
+    ev("syncCfg.token='ghp_zzz';persistSyncCfg()");
+    const dump = JSON.stringify(ev('DB'));
+    ok(dump.indexOf('ghp_zzz') === -1, 'token présent dans l\'export');
+    ok(dump.indexOf('profile') >= 0);
+    ev("syncCfg.token='';persistSyncCfg()");
+  });
+});
+
+/* ============================================================
+   Exécution
+   ============================================================ */
+const out = document.getElementById('out');
+const pill = document.getElementById('p-run');
+
+async function run() {
+  out.innerHTML = '';
+  let pass = 0, fail = 0;
+  const t0 = performance.now();
+
+  for (const s of SUITES) {
+    s.tests = [];
+    CURRENT = s;
+    s.fn();                       // collecte les tests
+    await fresh();                // une app vierge par groupe
+
+    const box = document.createElement('div');
+    box.className = 'suite';
+    box.innerHTML = '<h2>' + s.nom + '</h2>';
+    out.appendChild(box);
+
+    for (const t of s.tests) {
+      const row = document.createElement('div');
+      row.className = 't';
+      try {
+        await t.fn();
+        row.classList.add('pass');
+        row.innerHTML = '<span class="m">✓</span><span>' + t.nom + '</span>';
+        pass++;
+      } catch (e) {
+        row.classList.add('fail');
+        row.innerHTML = '<span class="m">✕</span><span>' + t.nom
+                      + '<span class="why">' + String(e && e.message || e) + '</span></span>';
+        fail++;
+      }
+      box.appendChild(row);
+      pill.className = 'pill n';
+      pill.textContent = (pass + fail) + ' exécutés…';
+    }
+  }
+
+  const ms = Math.round(performance.now() - t0);
+  pill.className = 'pill ' + (fail ? 'ko' : 'ok');
+  pill.textContent = fail ? (fail + ' échec' + (fail > 1 ? 's' : '') + ' sur ' + (pass + fail))
+                          : (pass + ' tests au vert');
+  const d = document.createElement('span');
+  d.className = 'pill n';
+  d.textContent = ms + ' ms';
+  pill.after(d);
+  document.getElementById('rerun').hidden = false;
+  window.__resultat = { pass, fail };
+}
+
+document.getElementById('rerun').onclick = () => location.reload();
+run();
+</script>
+</body>
+</html>

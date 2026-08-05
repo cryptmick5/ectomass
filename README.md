@@ -38,6 +38,25 @@ La fusion est faite entrée par entrée : le journal alimentaire, les séances e
 
 Sur mobile : ouvrir cette URL → menu du navigateur → « Ajouter à l'écran d'accueil » pour l'installer.
 
+## Tests
+
+`tests.html` charge l'application dans une iframe et rejoue 58 assertions : socle de données,
+fusion multi-appareils, échappement des contenus saisis, suivi de poids, cohérence des chiffres
+affichés, libellés, séance, dialogues, accessibilité, nutrition, profil.
+
+Aucune dépendance, aucun build. Il faut juste servir le dossier en HTTP :
+
+```
+python -m http.server 8000
+```
+
+puis ouvrir http://localhost:8000/tests.html — le bandeau du haut affiche le total,
+chaque échec indique la valeur attendue et la valeur obtenue.
+
+À lancer avant chaque push : la plupart des régressions de ce projet sont du type
+« même règle implémentée deux fois à deux endroits », et c'est exactement ce que ce
+fichier surveille.
+
 ## Développement local
 Servir le dossier en HTTP (le service worker exige http/https, pas `file://`) :
 ```
