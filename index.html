@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="EctoMass">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png" type="image/png">
 <title>EctoMass — Prise de masse ectomorphe</title>
 <style>
 :root{
@@ -171,6 +172,15 @@ button:focus-visible,.snav:focus-visible,.chip:focus-visible,.wkbox:focus-visibl
 
 label.field{display:block;margin-bottom:12px}
 label.field span{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600}
+input[type=date]{background:var(--bg2);border:1px solid var(--line2);color:var(--txt);border-radius:11px;padding:10px 12px;min-height:44px;font-family:inherit;font-size:14px;outline:none}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.75)}
+.wrow{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line2);font-size:13.5px;flex-wrap:nowrap}
+.wrow:last-child{border-bottom:none}
+.wrow .wd{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wrow .wv{flex-shrink:0;font-variant-numeric:tabular-nums}
+.wrow .dl{flex-shrink:0;font-variant-numeric:tabular-nums;font-size:12px;min-width:52px;text-align:right}
+.wrow .del{flex-shrink:0;min-width:34px;min-height:34px;padding:4px 6px}
+.wrow .tag{margin-left:5px}
 input[type=number],input[type=text],select{width:100%;background:var(--bg2);border:1px solid var(--line2);color:var(--txt);border-radius:11px;padding:12px 13px;outline:none;min-height:44px;
   transition:border-color .2s,box-shadow .25s,background .2s}
 @media(hover:hover){input[type=number]:hover,input[type=text]:hover,select:hover{border-color:#3b4a68}}
@@ -274,7 +284,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(25
 
 canvas{width:100%;display:block}
 .wk-strip{display:flex;gap:6px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none}.wk-strip::-webkit-scrollbar{display:none}
-.wkbox{flex-shrink:0;width:52px;border:1px solid var(--line2);border-radius:11px;padding:8px 4px;text-align:center;background:var(--card2);cursor:pointer;color:inherit;font:inherit;
+.wkbox{flex-shrink:0;width:58px;border:1px solid var(--line2);border-radius:11px;padding:8px 4px;text-align:center;background:var(--card2);cursor:pointer;color:inherit;font:inherit;
   transition:transform .26s var(--spring),border-color .24s,background .24s,box-shadow .26s,opacity .24s}
 @media(hover:hover){.wkbox:hover{transform:translateY(-3px);border-color:#3b4a68}}
 .wkbox.on{border-color:var(--accent);background:rgba(255,107,53,.14);box-shadow:0 8px 22px -10px rgba(255,107,53,.7);transform:translateY(-2px)}
@@ -546,7 +556,10 @@ body.offline .offbar{display:flex}
           <canvas id="weight-chart" height="180" role="img" aria-label="Courbe de poids"></canvas>
           <div class="empty-chart" id="weight-empty" style="display:none"></div>
           <div class="row" id="weight-legend" style="gap:14px;margin-top:6px;font-size:11px;color:var(--muted)"><span class="center" style="gap:5px"><span style="width:14px;height:3px;background:var(--accent);border-radius:2px;display:inline-block"></span>Poids réel</span><span class="center" style="gap:5px"><span style="width:14px;height:3px;background:var(--blue);border-radius:2px;display:inline-block;opacity:.8"></span>Tendance (moy. 7 j)</span></div>
-          <div class="row" style="margin-top:12px"><input type="number" id="weight-input" placeholder="Poids (kg)" step="0.1" min="30" max="250" inputmode="decimal" enterkeyhint="done" aria-label="Poids du jour en kilogrammes"><button class="btn sm" id="log-weight" style="white-space:nowrap">Ajouter</button></div>
+          <div class="row" style="margin-top:12px"><input type="number" id="weight-input" placeholder="Poids (kg)" step="0.1" min="30" max="250" inputmode="decimal" enterkeyhint="done" aria-label="Poids en kilogrammes"><button class="btn sm" id="log-weight" style="white-space:nowrap">Ajouter</button></div>
+          <div class="center" style="margin-top:8px;gap:8px"><label class="small muted" for="weight-date" style="white-space:nowrap">Date de la pesée</label><input type="date" id="weight-date" style="flex:1;min-width:130px"></div>
+          <div class="small muted" style="margin-top:6px">Une seule pesée par jour : ressaisir aujourd'hui remplace la valeur. Change la date pour rattraper une pesée passée.</div>
+          <div id="weight-list" style="margin-top:10px"></div>
           <div class="small" id="prog-advice" style="margin-top:10px"></div>
         </div>
         <div class="card">
@@ -948,6 +961,10 @@ const SESSIONS={
      exos:["frontsquat","dchalt","rowhalt","dips","marteau","mollets"]}
 };
 // 12-week progression: setMod (± sets), repAdj (target = repHi + repAdj), intensity label, deload, rir (reps en réserve)
+/* les libellés étaient coupés à 6 caractères : « Adapta », « Intens »,
+   et « Deload / test » devenait indiscernable d'un vrai deload */
+const PH_SHORT={'Adaptation':'Adapt.','Intensité':'Intens.','Deload / test':'Test','Deload':'Deload','Volume':'Volume','Force':'Force','Pic':'Pic'};
+function phShort(ph){return PH_SHORT[ph]||ph}
 const WEEKS=[
   {ph:"Adaptation",setMod:0,repAdj:2,int:"Léger-modéré",rir:"3-4 RIR",deload:false,note:"Technique parfaite, charges confortables. Apprends les mouvements."},
   {ph:"Volume",setMod:0,repAdj:1,int:"Modéré",rir:"2-3 RIR",note:"Ajoute un peu de charge, garde 2-3 reps en réserve."},
@@ -975,7 +992,10 @@ function isComeback(){const d=daysSinceLastSession();return d!=null&&d>=10}
 function viewWeek(){return DB.view.week!=null?DB.view.week:programWeek()}
 function currentWeekIdx(){return viewWeek()}
 function inc(role){return role==='L'?5:2.5}
-function targetReps(exoId,wk){const e=exDef(exoId);if(e.rep[1]===0)return 0;return clamp(e.rep[1]+WEEKS[wk].repAdj,4,20)}
+/* la cible ne doit jamais sortir de la plage annoncée pour l'exercice :
+   afficher « 3×17 » sur un mouvement décrit 12-15 était contradictoire */
+function targetReps(exoId,wk){const e=exDef(exoId);if(e.rep[1]===0)return 0;
+  return clamp(e.rep[1]+WEEKS[wk].repAdj,Math.max(4,e.rep[0]),e.rep[1])}
 function targetSets(exoId,wk){return clamp(3+WEEKS[wk].setMod,2,5)}
 // recommendation weight
 function recoWeight(exoId,wk){
@@ -1118,6 +1138,31 @@ function lineChart(cv,series,opts={}){const {ctx,w,h}=setupCanvas(cv,opts.h||180
     if(si===0){ctx.lineTo(X(data.length-1),h-pad.b);ctx.lineTo(X(0),h-pad.b);ctx.closePath();ctx.fillStyle='rgba(255,107,53,.08)';ctx.fill();}
     ctx.fillStyle=si===0?'#ff6b35':cols[si];data.forEach((d,i)=>{ctx.beginPath();ctx.arc(X(i),Y(d.v),si===0?3:2,0,7);ctx.fill()})});
   ctx.fillStyle='#8b99b3';ctx.textAlign='center';const d0=series[0];if(d0.length){ctx.fillText(d0[0].l,X(0),h-6);if(d0.length>1)ctx.fillText(d0[d0.length-1].l,X(d0.length-1),h-6)}ctx.textAlign='left';}
+/* « Pectoraux (haut) » et « Pectoraux (bas) » se coupaient tous deux en « Pecto » :
+   on raisonne par groupe musculaire, comme l'utilisateur */
+function muscleGroup(m){return String(m).replace(/\s*\([^)]*\)\s*/g,'').trim()}
+/* barres horizontales : 7 libellés longs ne tiennent pas en vertical sur un téléphone */
+function hBarChart(cv,data,opts={}){
+  const h=Math.max(90,data.length*30+16);
+  const {ctx,w}=setupCanvas(cv,h);ctx.clearRect(0,0,w,h);if(!data.length)return;
+  const labW=Math.min(96,Math.max(64,w*0.30));
+  /* la marge droite se cale sur la valeur la plus large : « 1033 kg » débordait */
+  ctx.font='700 12px sans-serif';
+  const padR=Math.ceil(Math.max(...data.map(d=>ctx.measureText(R(d.v)+' kg').width)))+14;
+  const mx=Math.max(...data.map(d=>d.v))||1;
+  data.forEach((d,i)=>{
+    const y=8+i*30,bh=18,bw=Math.max(2,(w-labW-padR)*(d.v/mx));
+    ctx.fillStyle='#9fadc2';ctx.font='12px sans-serif';ctx.textAlign='right';ctx.textBaseline='middle';
+    let lab=d.l;while(ctx.measureText(lab).width>labW-8&&lab.length>3)lab=lab.slice(0,-1);
+    if(lab!==d.l)lab=lab.slice(0,-1)+'…';
+    ctx.fillText(lab,labW-8,y+bh/2);
+    const g=ctx.createLinearGradient(labW,0,labW+bw,0);g.addColorStop(0,'#ff6b35');g.addColorStop(1,'#ffa63d');ctx.fillStyle=g;
+    if(ctx.roundRect){ctx.beginPath();ctx.roundRect(labW,y,bw,bh,5);ctx.fill()}else ctx.fillRect(labW,y,bw,bh);
+    ctx.fillStyle='#eef3f9';ctx.font='700 12px sans-serif';ctx.textAlign='left';
+    ctx.fillText(R(d.v)+' kg',labW+bw+7,y+bh/2);
+  });
+  ctx.textAlign='left';ctx.textBaseline='alphabetic';
+}
 function barChart(cv,data,opts={}){const {ctx,w,h}=setupCanvas(cv,opts.h||180);ctx.clearRect(0,0,w,h);if(!data.length)return;
   const pad={l:8,r:8,t:14,b:34};const mx=Math.max(...data.map(d=>d.v))||1;const bw=(w-pad.l-pad.r)/data.length;
   data.forEach((d,i)=>{const bh=(h-pad.t-pad.b)*(d.v/mx);const x=pad.l+i*bw+bw*0.15,y=h-pad.b-bh,bwid=bw*0.7;
@@ -1149,11 +1194,10 @@ function renderHome(){
   const trend=weightTrendPerWeek();$('#stat-trend').textContent=trend==null?'—':(trend>0?'+':'')+trend.toFixed(2);
   /* la couleur suit la fourchette cible, pas le signe : grossir vite n'est pas « bon » */
   if(trend!=null){
-    const w0=wl.length?wl[wl.length-1].w:DB.profile.weight;
-    const lo=w0*0.0025,hi=w0*0.005;
-    $('#stat-trend').style.color=(trend>=lo&&trend<=hi)?'var(--green)':(trend>hi||trend<0)?'var(--amber)':'var(--txt)';
-    $('#stat-trend').title='Cible : +'+R(lo,2)+' à +'+R(hi,2)+' kg/semaine';
-  }else $('#stat-trend').style.color='';
+    const v=trendVerdict(trend);
+    $('#stat-trend').style.color=v.k==='ideal'?'var(--green)':'var(--amber)';
+    $('#stat-trend').title='Cible : +'+v.lo+' à +'+v.hi+' kg/semaine';
+  }else{$('#stat-trend').style.color='';$('#stat-trend').title=''}
   const pw=programWeek(),wk=currentWeekIdx(),preview=(wk!==pw);
   $('#stat-week').innerHTML=(pw+1)+'<small style="font-size:11px;color:var(--muted2)">/12</small>';
   $('#stat-streak').innerHTML=doneThisWeek()+'<small style="font-size:11px;color:#4a2408">/3</small>';
@@ -1168,10 +1212,12 @@ function renderHome(){
   const isReco=(shown===next)&&!allDone;
   $('#home-w-title').textContent=isReco?'Séance recommandée':'Séance sélectionnée';
   $('#home-w-tag').textContent=WEEKS[wk].deload?'Deload':'Semaine '+(wk+1);
+  const tags=[];
+  if(doneLetters.has(shown))tags.push('<span class="tag" style="color:var(--green)">✓ déjà faite</span>');
+  if(!isReco&&!allDone)tags.push(`<span class="tag" style="color:var(--accent2)">conseillée : ${esc(next)}</span>`);
+  if(allDone)tags.push('<span class="tag" style="color:var(--green)">semaine terminée</span>');
   $('#home-w-name').innerHTML=esc(SESSIONS[shown].name)
-    +(doneLetters.has(shown)?' <span class="tag" style="color:var(--green)">✓ faite cette semaine</span>':'')
-    +(!isReco&&!allDone?` <span class="tag" style="color:var(--accent2)">conseillée : ${esc(next)}</span>`:'')
-    +(allDone?' <span class="tag" style="color:var(--green)">semaine terminée</span>':'');
+    +(tags.length?`<div class="row wrap" style="gap:5px;margin-top:5px">${tags.join('')}</div>`:'');
   $('#home-workout').innerHTML=sessionExos(shown).slice(0,4).map(id=>`<div class="between" style="padding:4px 0"><span>${esc(exDef(id).n)}</span><span class="small mono">${targetSets(id,wk)}×${exDef(id).rep[1]?targetReps(id,wk):'—'}</span></div>`).join('')
     +`<button class="btn sm" style="width:100%;margin-top:10px" data-start-session="${esc(shown)}">${doneLetters.has(shown)?'Refaire la séance '+esc(shown):'Démarrer la séance '+esc(shown)} →</button>`;
   /* prévisualisation d'une autre semaine : visible ici aussi, et annulable d'un geste */
@@ -1213,6 +1259,21 @@ function renderWater(){
 function setWater(ml,date){const cur=dayFood(date).water||0;const v=(cur===ml)?ml-250:ml;
   if(!DB.foodLog[date])DB.foodLog[date]={items:[],water:0};
   DB.foodLog[date].water=Math.max(0,v);save();renderWater()}
+/* Accueil colorait la tendance sur une fourchette en % du poids, Progression
+   la commentait sur des seuils absolus : le même chiffre pouvait être « idéal »
+   d'un côté et hors cible de l'autre. Une seule règle désormais. */
+function trendBand(){
+  const wl=DB.weightLog;
+  const w0=wl.length?wl[wl.length-1].w:DB.profile.weight;
+  return {lo:R(w0*0.0025,2),hi:R(w0*0.005,2)};
+}
+function trendVerdict(t){
+  const {lo,hi}=trendBand();
+  if(t==null)return {k:'na',lo,hi};
+  if(t<lo)return {k:'lent',lo,hi};
+  if(t>hi)return {k:'rapide',lo,hi};
+  return {k:'ideal',lo,hi};
+}
 function weightTrendPerWeek(){const wl=DB.weightLog;if(wl.length<3)return null;const sm=smoothWeights(wl);const last=sm[sm.length-1];const ref=sm.find(x=>(new Date(last.date)-new Date(x.date))<=14*864e5)||sm[0];const days=(new Date(last.date)-new Date(ref.date))/864e5;if(days<3)return null;return (last.v-ref.v)/days*7}
 function smoothWeights(wl){const w=7;return wl.map((d,i)=>{const win=wl.slice(Math.max(0,i-w+1),i+1);return{date:d.date,v:win.reduce((a,x)=>a+x.w,0)/win.length}})}
 function sessionVolume(s){return Object.values(s.exos||{}).reduce((a,arr)=>a+arr.reduce((b,x)=>b+(x.warm?0:(x.w||0)*(x.r||0)),0),0)}
@@ -1231,7 +1292,7 @@ function renderWeekStrip(){
     rb.innerHTML=`🔁 <span style="flex:1;min-width:170px"><b>Reprise après ${dsl} jours</b> — on repart en semaine ${pw+1} et les charges conseillées sont allégées de 10 %.</span>`}
   else rb.style.display='none';
   const doneWeeks=new Set(Object.keys(DB.workoutLog).map(k=>clamp(Math.floor((new Date(k)-new Date(DB.startDate))/864e5/7),0,11)));
-  $('#wk-strip').innerHTML=WEEKS.map((W,i)=>`<button type="button" class="wkbox ${i===wk?'on':''} ${W.deload?'deload':''} ${doneWeeks.has(i)&&i<pw?'done':''}" data-week="${i}" aria-pressed="${i===wk}" aria-label="Semaine ${i+1}${W.deload?' (deload)':''}"><b>${i+1}${i===pw?' •':''}</b><small>${esc(W.deload?'deload':W.ph.slice(0,6))}</small></button>`).join('');
+  $('#wk-strip').innerHTML=WEEKS.map((W,i)=>`<button type="button" class="wkbox ${i===wk?'on':''} ${W.deload?'deload':''} ${doneWeeks.has(i)&&i<pw?'done':''}" data-week="${i}" aria-pressed="${i===wk}" aria-label="Semaine ${i+1}${W.deload?' (deload)':''}"><b>${i+1}${i===pw?' •':''}</b><small>${esc(phShort(W.ph))}</small></button>`).join('');
 }
 function setWeek(i){DB.view.week=(i===programWeek())?null:i;save();renderWeekStrip();renderExos();renderHome();}
 function selectSession(s){
@@ -1765,36 +1826,80 @@ function renderWeekPlan(){
   const rw=$('#reset-choices-week');if(rw)rw.style.display=overrideKeys().length?'inline-flex':'none';
 }
 
+/* exoState n'était alimenté qu'au moment d'enregistrer une séance : un import
+   ou une synchro pouvait laisser des séances complètes face à « PR : — kg ».
+   On le reconstruit depuis l'historique quand il manque. */
+function rebuildExoState(){
+  const st={};
+  Object.keys(DB.workoutLog).sort().forEach(k=>{
+    const s=DB.workoutLog[k];if(!s||!s.exos)return;
+    Object.keys(s.exos).forEach(id=>{
+      const e=exDef(id);if(e.time)return;
+      const work=(s.exos[id]||[]).filter(x=>!x.warm&&x.w>0);if(!work.length)return;
+      const top=Math.max(...work.map(x=>x.w));
+      const b1=Math.max(...work.map(x=>e1rm(x.w,x.r)));
+      const cur=st[id]||{};
+      if(cur.pr==null||top>cur.pr){cur.pr=top;cur.prDate=k}
+      cur.best1=Math.max(cur.best1||0,b1);
+      cur.lastW=top;
+      st[id]=cur;
+    });
+  });
+  Object.keys(st).forEach(id=>{
+    const prev=DB.exoState[id]||{};
+    DB.exoState[id]=Object.assign({},st[id],{hitTop:prev.hitTop},prev.pr!=null?{pr:Math.max(prev.pr,st[id].pr),prDate:prev.prDate||st[id].prDate}:{});
+    if(prev.best1)DB.exoState[id].best1=Math.max(prev.best1,st[id].best1);
+  });
+  return Object.keys(st).length;
+}
+function ensureExoState(){
+  const hasLogs=Object.keys(DB.workoutLog).length>0;
+  if(!hasLogs)return;
+  const known=Object.keys(DB.exoState||{}).filter(id=>DB.exoState[id]&&DB.exoState[id].pr!=null).length;
+  const logged=new Set();Object.values(DB.workoutLog).forEach(s=>Object.keys(s.exos||{}).forEach(id=>{if(!exDef(id).time)logged.add(id)}));
+  if(known<logged.size){if(rebuildExoState())save()}
+}
+
 /* ---------------- RENDER: PROGRESS ---------------- */
 let currentLift=null;
 function renderProgress(){
+  ensureExoState();
   const wl=DB.weightLog;$('#prog-latest').textContent=wl.length?wl[wl.length-1].w+' kg':'—';
   const raw=wl.map(x=>({v:x.w,l:fmtDate(x.date).replace('.','')}));const sm=smoothWeights(wl).map(x=>({v:R(x.v,1),l:fmtDate(x.date).replace('.','')}));
   const hasCurve=wl.length>=2;
+  renderWeightList();
   $('#weight-chart').style.display=hasCurve?'block':'none';
   $('#weight-empty').style.display=hasCurve?'none':'block';
   $('#weight-legend').style.display=hasCurve?'flex':'none';
   $('#prog-advice').style.display=hasCurve?'block':'none';
   if(!hasCurve)$('#weight-empty').innerHTML=wl.length===1
-    ? `<div class="ico">✅</div>1<sup>re</sup> pesée enregistrée : <b>${wl[0].w} kg</b><br><span class="small">Encore une pesée un autre jour et la courbe apparaît.</span>`
+    ? `<div class="ico">✅</div>1<sup>re</sup> pesée enregistrée : <b>${wl[0].w} kg</b> le ${esc(fmtDate(wl[0].date))}<br><span class="small">Il faut deux jours différents pour tracer une courbe. Reviens demain, ou <b>change la date ci-dessous</b> pour saisir une pesée passée.</span>`
     : `<div class="ico">⚖️</div>Note ton poids ci-dessous pour lancer la courbe.<br><span class="small">Pèse-toi le matin à jeun, 3×/semaine.</span>`;
   if(hasCurve)lineChart($('#weight-chart'),[raw,sm],{dec:1,colors:['#ff6b35','#4c9dff']});
   const trend=weightTrendPerWeek();
-  $('#prog-advice').innerHTML=trend==null?'Enregistre ton poids 3×/sem pour la courbe de tendance (ligne bleue) et des conseils auto.':
-    (trend<0.15?`📉 <b>+${trend.toFixed(2)} kg/sem</b> — trop lent. Ajoute +150 kcal/jour.`:trend>0.6?`⚠️ <b>+${trend.toFixed(2)} kg/sem</b> — un peu rapide (risque de gras). Réduis de ~150 kcal.`:`✅ <b>+${trend.toFixed(2)} kg/sem</b> — rythme idéal de prise de masse propre !`);
+  const v=trendVerdict(trend);
+  const band=`cible +${v.lo} à +${v.hi} kg/sem`;
+  const sgn=trend==null?'':(trend>0?'+':'')+trend.toFixed(2);
+  $('#prog-advice').innerHTML=trend==null
+    ? 'Enregistre ton poids 3×/sem pour la courbe de tendance (ligne bleue) et des conseils auto.'
+    : v.k==='lent' ? `📉 <b>${sgn} kg/sem</b> — sous la cible (${band}). Ajoute +150 kcal/jour.`
+    : v.k==='rapide' ? `⚠️ <b>${sgn} kg/sem</b> — au-dessus de la cible (${band}), risque de gras. Retire ~150 kcal/jour.`
+    : `✅ <b>${sgn} kg/sem</b> — dans la cible (${band}).`;
 
   // muscle volume 7d
   const ms=new Date(Date.now()-7*864e5);const mvol={};
-  Object.keys(DB.workoutLog).forEach(k=>{if(new Date(k)>=ms){const s=DB.workoutLog[k];Object.keys(s.exos).forEach(id=>{const v=s.exos[id].reduce((a,x)=>a+(x.warm?0:x.w*x.r),0);const mm=exDef(id).m||[];mm.forEach(m=>mvol[m]=(mvol[m]||0)+v/mm.length)})}});
-  const mdata=Object.keys(mvol).map(m=>({l:m.slice(0,5),v:mvol[m]})).sort((a,b)=>b.v-a.v).slice(0,7);
-  if(mdata.length){$('#muscle-empty').style.display='none';$('#muscle-chart').style.display='block';barChart($('#muscle-chart'),mdata);
+  Object.keys(DB.workoutLog).forEach(k=>{if(new Date(k)>=ms){const s=DB.workoutLog[k];Object.keys(s.exos).forEach(id=>{
+    const v=s.exos[id].reduce((a,x)=>a+(x.warm?0:x.w*x.r),0);const mm=exDef(id).m||[];
+    mm.forEach(m=>{const g=muscleGroup(m);mvol[g]=(mvol[g]||0)+v/mm.length})})}});
+  const mdata=Object.keys(mvol).filter(m=>mvol[m]>0).map(m=>({l:m,v:mvol[m]})).sort((a,b)=>b.v-a.v).slice(0,8);
+  if(mdata.length){$('#muscle-empty').style.display='none';$('#muscle-chart').style.display='block';hBarChart($('#muscle-chart'),mdata);
     $('#muscle-chart').setAttribute('aria-label','Volume 7 jours par muscle : '+mdata.map(d=>d.l+' '+R(d.v)+' kg').join(', '))}else{$('#muscle-empty').style.display='block';$('#muscle-chart').style.display='none';const c=$('#muscle-chart').getContext('2d');c.clearRect(0,0,$('#muscle-chart').width,$('#muscle-chart').height)}
 
   // lifts
   const logged=[];Object.values(DB.workoutLog).forEach(s=>Object.keys(s.exos).forEach(id=>{if(!logged.includes(id)&&!exDef(id).time)logged.push(id)}));
   if(!logged.length){$('#lift-seg').innerHTML='';$('#lift-empty').style.display='block';$('#lift-chart').style.display='none';$('#lift-stats').textContent='';$('#lift-pr').textContent='';lineChart($('#lift-chart'),[])}
   else{$('#lift-empty').style.display='none';$('#lift-chart').style.display='block';if(!logged.includes(currentLift))currentLift=logged[0];
-    $('#lift-seg').innerHTML=logged.map(id=>`<button class="chip ${id===currentLift?'on':''}" data-lift="${esc(id)}" aria-pressed="${id===currentLift}">${esc(exDef(id).n.split(' ')[0])}</button>`).join('');
+    $('#lift-seg').innerHTML=logged.map(id=>`<button class="chip ${id===currentLift?'on':''}" style="white-space:nowrap" data-lift="${esc(id)}" aria-pressed="${id===currentLift}">${esc(exDef(id).n)}</button>`).join('');
     const pts=[];Object.keys(DB.workoutLog).sort().forEach(k=>{const ex=DB.workoutLog[k].exos[currentLift];if(ex){const work=ex.filter(s=>!s.warm);if(!work.length)return;const best=Math.max(...work.map(s=>e1rm(s.w,s.r)));pts.push({v:best,l:fmtDate(k).replace('.','')})}});
     lineChart($('#lift-chart'),[pts],{dec:0});
     $('#lift-chart').setAttribute('aria-label',pts.length?('1RM estimé pour '+exDef(currentLift).n+' : de '+R(pts[0].v)+' à '+R(pts[pts.length-1].v)+' kg sur '+pts.length+' séances'):'Pas encore de données');
@@ -1890,7 +1995,7 @@ function go(p,fromHistory){
     if(p==='home')renderHome();
     if(p==='train'){renderWeekStrip();renderExos()}
     if(p==='food'){const b=$('#food-seg button.on');setFoodTab(b?b.dataset.f:'log')}
-    if(p==='prog')renderProgress();
+    if(p==='prog'){syncWeightDate();renderProgress()}
     if(p==='profile'){renderProfile();renderSyncCard()}
   }catch(e){console.error('EctoMass render:',e);toast('Un affichage a échoué — tes données sont intactes.','err')}
 }
@@ -1961,9 +2066,55 @@ $('#notif-toggle').onclick=()=>{if(!notifSupported())return;
   try{Notification.requestPermission().then(()=>{updNotifUI();if(Notification.permission==='granted')toast('Alerte activée 🔔')})}catch(e){updNotifUI()}};
 $$('#pf-sex button').forEach(b=>b.onclick=()=>{DB.profile.sex=b.dataset.v;$$('#pf-sex button').forEach(x=>x.classList.toggle('on',x===b));pressed('#pf-sex button',b);saveProfile()});
 
-$('#log-weight').onclick=()=>{const v=parseFloat(String($('#weight-input').value).replace(',','.'));
+/* --- pesées : une par jour, mais saisissables à n'importe quelle date passée --- */
+function weightDateInput(){const el=$('#weight-date');return (el&&el.value)||todayKey()}
+function syncWeightDate(){const el=$('#weight-date');if(!el)return;el.max=todayKey();if(!el.value)el.value=todayKey()}
+function setWeightAt(date,v){
+  const prev=DB.weightLog.find(x=>x.date===date);
+  DB.weightLog=DB.weightLog.filter(x=>x.date!==date);
+  DB.weightLog.push({date,w:v});
+  DB.weightLog.sort((a,b)=>a.date.localeCompare(b.date));
+  const last=DB.weightLog[DB.weightLog.length-1];
+  DB.profile.weight=last.w;DB.profileSet=true;save();
+  return prev?prev.w:null;
+}
+function delWeight(date){
+  const prev=DB.weightLog.find(x=>x.date===date);if(!prev)return;
+  DB.weightLog=DB.weightLog.filter(x=>x.date!==date);
+  const last=DB.weightLog[DB.weightLog.length-1];if(last)DB.profile.weight=last.w;
+  save();renderProgress();renderProfile();renderHome();
+  toast('Pesée du '+fmtDate(date)+' supprimée','warn',{label:'Annuler',fn:()=>{
+    DB.weightLog.push(prev);DB.weightLog.sort((a,b)=>a.date.localeCompare(b.date));
+    const l=DB.weightLog[DB.weightLog.length-1];if(l)DB.profile.weight=l.w;
+    save();renderProgress();renderProfile();renderHome()}});
+}
+function renderWeightList(){
+  const host=$('#weight-list');if(!host)return;
+  const wl=DB.weightLog;
+  if(!wl.length){host.innerHTML='';return}
+  const rows=wl.slice(-8).reverse();
+  host.innerHTML='<div class="small muted" style="font-weight:700;margin-bottom:4px">Dernières pesées</div>'+rows.map(x=>{
+    const i=wl.indexOf(x),prev=i>0?wl[i-1]:null;
+    const d=prev?R(x.w-prev.w,1):null;
+    const dl=d==null?'':`<span class="dl" style="color:${d>0?'var(--green)':d<0?'var(--amber)':'var(--muted)'}">${d>0?'+':''}${d} kg</span>`;
+    return `<div class="wrow"><span class="wd">${esc(capitalize(fmtDate(x.date)))}${x.date===todayKey()?'<span class="tag">auj.</span>':''}</span>
+      <b class="wv mono">${x.w} kg</b>${dl||'<span class="dl"></span>'}<button class="del" style="font-size:15px" data-del-weight="${esc(x.date)}" aria-label="Supprimer la pesée du ${esc(fmtDate(x.date))}">✕</button></div>`}).join('');
+}
+$('#log-weight').onclick=()=>{
+  const v=parseFloat(String($('#weight-input').value).replace(',','.'));
   if(isNaN(v)){toast('Entre un poids pour l\'enregistrer','warn');return}
-  if(v<30||v>250){toast('Poids attendu entre 30 et 250 kg','warn');return}const k=todayKey();DB.weightLog=DB.weightLog.filter(x=>x.date!==k);DB.weightLog.push({date:k,w:v});DB.weightLog.sort((a,b)=>a.date.localeCompare(b.date));DB.profile.weight=v;DB.profileSet=true;save();$('#weight-input').value='';renderProgress();renderProfile();renderHome();toast('Poids enregistré 📈')};
+  if(v<30||v>250){toast('Poids attendu entre 30 et 250 kg','warn');return}
+  const date=weightDateInput();
+  if(date>todayKey()){toast('Impossible de noter une pesée dans le futur','warn');return}
+  const had=setWeightAt(date,v);
+  $('#weight-input').value='';
+  renderProgress();renderProfile();renderHome();
+  const lbl=date===todayKey()?"d'aujourd'hui":'du '+fmtDate(date);
+  if(had!=null&&had!==v)toast('Pesée '+lbl+' mise à jour : '+had+' → '+v+' kg');
+  else if(had!=null)toast('Pesée '+lbl+' inchangée','warn');
+  else if(DB.weightLog.length===1)toast('1re pesée enregistrée — il en faut une à une autre date pour la courbe');
+  else toast('Pesée '+lbl+' enregistrée');
+};
 
 $('#add-food-btn').onclick=()=>openAddFood(null);
 $('#close-modal').onclick=()=>closeModal('#food-modal');
@@ -2387,7 +2538,7 @@ $('#confirm-modal').onclick=e=>{if(e.target.id==='confirm-modal')closeModal('#co
 
 /* ---- Délégation d'événements : les contenus saisis ne transitent plus par des attributs ---- */
 document.addEventListener('click',e=>{
-  const t=e.target.closest('[data-open-exo],[data-pick-exo],[data-food],[data-recent],[data-edit-food],[data-del-food],[data-swap],[data-swap-open],[data-shop],[data-rmshop],[data-meal-toggle],[data-week],[data-lift],[data-del-session],[data-rir],[data-pick-session],[data-start-session],[data-clear-preview]');
+  const t=e.target.closest('[data-open-exo],[data-pick-exo],[data-food],[data-recent],[data-edit-food],[data-del-food],[data-swap],[data-swap-open],[data-shop],[data-rmshop],[data-meal-toggle],[data-week],[data-lift],[data-del-session],[data-rir],[data-pick-session],[data-start-session],[data-clear-preview],[data-del-weight]');
   if(!t)return;
   const d=t.dataset;
   if(d.openExo!==undefined){openExo(+d.openExo);return}
@@ -2408,6 +2559,7 @@ document.addEventListener('click',e=>{
   if(d.pickSession!==undefined){selectSession(d.pickSession);go('train');return}
   if(d.startSession!==undefined){selectSession(d.startSession);go('train');return}
   if(d.clearPreview!==undefined){setWeek(programWeek());toast('Retour à ta semaine réelle');return}
+  if(d.delWeight!==undefined){delWeight(d.delWeight);return}
 });
 
 // expose
@@ -2422,7 +2574,7 @@ Object.assign(window,{go,selectSession,setWeek,toggleDone,discardDraft,setFoodTa
   if(p!=='home')go(p,true);
 })();
 primeSnapshot();
-[renderHome,renderProfile,renderSyncCard,resumeRest,updNotesCount].forEach(fn=>{
+[renderHome,renderProfile,renderSyncCard,resumeRest,updNotesCount,syncWeightDate].forEach(fn=>{
   try{fn()}catch(e){console.error('EctoMass init:',e)}
 });
 if(syncCfg.token)setTimeout(()=>syncNow('full'),400);
