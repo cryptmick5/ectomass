@@ -2,8 +2,7 @@
   "name": "EctoMass — Prise de masse ectomorphe",
   "short_name": "EctoMass",
   "description": "App de prise de masse spécial ectomorphe : entraînement full-body, plans de repas, suivi calories et progression.",
-  "start_url": "./?src=pwa",
-  "id": "/ectomass/",
+  "start_url": "index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
@@ -18,8 +17,8 @@
     { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Démarrer la séance", "short_name": "Séance", "url": "./?src=pwa#train", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
-    { "name": "Ajouter un aliment", "short_name": "Aliment", "url": "./?src=pwa#food", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
-    { "name": "Noter mon poids", "short_name": "Poids", "url": "./?src=pwa#prog", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
+    { "name": "Démarrer la séance", "short_name": "Séance", "url": "index.html#train", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Ajouter un aliment", "short_name": "Aliment", "url": "index.html#food", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Noter mon poids", "short_name": "Poids", "url": "index.html#prog", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
   ]
 }
