@@ -276,6 +276,11 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(25
 .exo-detail .db b{font-size:12px;color:var(--accent2);display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:.03em}
 .exo-detail .db p{margin:0;font-size:13px;color:var(--muted);line-height:1.45}
 .warmnote{background:rgba(255,176,32,.10);border:1px solid rgba(255,176,32,.28);border-radius:9px;padding:7px 10px;font-size:12px;color:var(--amber);margin-bottom:8px}
+/* note morpho : verte quand l'exercice te convient, ambre quand il te dessert */
+.morphonote{border-radius:9px;padding:7px 10px;font-size:12px;margin-bottom:8px;line-height:1.5}
+.morphonote.good{background:rgba(49,197,109,.10);border:1px solid rgba(49,197,109,.28);color:var(--green)}
+.morphonote.warn{background:rgba(255,176,32,.10);border:1px solid rgba(255,176,32,.28);color:var(--amber)}
+.morphonote b{color:inherit}
 
 .pr{background:rgba(255,166,61,.14);border:1px solid rgba(255,166,61,.35);color:var(--accent2);border-radius:8px;padding:2px 8px;font-size:11px;font-weight:750;
   animation:prpulse 2.6s ease-in-out 3}
@@ -543,7 +548,8 @@ body.offline .offbar{display:flex}
         <div class="small muted" id="week-scheme" style="margin-top:8px"></div>
       </div>
 
-      <div class="seg" id="session-seg" role="tablist" aria-label="Choix de la séance" style="margin:12px 0"><button role="tab" aria-selected="true" data-s="A" class="on">Séance A</button><button role="tab" aria-selected="false" tabindex="-1" data-s="B">Séance B</button><button role="tab" aria-selected="false" tabindex="-1" data-s="C">Séance C</button></div>
+      <div id="prog-pick" style="margin:12px 0 0"></div>
+      <div class="seg" id="session-seg" role="tablist" aria-label="Choix de la séance" style="margin:10px 0"></div>
 
       <div class="tip" style="margin-bottom:14px"><span class="i">🎯</span><div id="session-tip"></div></div>
       <div id="session-progress"><div class="sp-head"><b id="sp-title">Exercice 1/1</b><span class="small" id="sp-lbl"></span></div><div class="sp-track"><i id="sp-bar" style="width:0%"></i></div></div>
@@ -669,6 +675,15 @@ body.offline .offbar{display:flex}
               <select id="pf-surplus"><option value="250">Lean +250</option><option value="400" selected>Standard +400</option><option value="550">Rapide +550</option></select></label>
             <label class="field"><span>Repas / jour</span>
               <select id="pf-meals"><option value="3">3</option><option value="4">4</option><option value="5" selected>5</option><option value="6">6</option></select></label>
+          </div>
+          <hr style="margin:14px 0;border:none;border-top:1px solid var(--line2)">
+          <b class="small" style="display:block;margin-bottom:2px">🧬 Morphologie</b>
+          <div class="small muted" style="margin-bottom:8px">Compare-toi debout, bras le long du corps. Bras longs : les doigts descendent bas sur la cuisse. Fémurs longs : assis, tes genoux sont nettement plus hauts que tes hanches. Ces réglages ajoutent des repères sur les fiches d'exercices.</div>
+          <div class="g2 grid">
+            <label class="field"><span>Longueur des bras</span>
+              <select id="pf-bras"><option value="court">Courts</option><option value="moyen">Moyens</option><option value="long">Longs</option></select></label>
+            <label class="field"><span>Longueur des fémurs</span>
+              <select id="pf-femurs"><option value="court">Courts</option><option value="moyen">Moyens</option><option value="long">Longs</option></select></label>
           </div>
         </div>
         <div>
@@ -873,11 +888,12 @@ function deepMerge(base,over){
 
 /* ---------------- DATA ---------------- */
 const DEFAULT={
-  profile:{sex:'h',age:25,height:178,weight:65,activity:1.375,surplus:400,meals:5},
+  profile:{sex:'h',age:25,height:178,weight:65,activity:1.375,surplus:400,meals:5,morpho:{bras:'long',femurs:'long'}},
+  program:'fondation',
   startDate:todayKey(), weightLog:[], workoutLog:{}, exoState:{}, foodLog:{}, plan:{seed:1,daySeed:{},overrides:{},date:'',removed:[],checked:[]}, view:{week:null,session:'A'}, recentFoods:[], customFoods:[], sessionPlan:{}, customExos:{}, draft:null, profileSet:false, lastExport:null, backupSnooze:0, rest:null,
   stamps:{}, tombs:{}
 };
-const SYNC_SECTIONS=['profile','startDate','weightLog','workoutLog','exoState','foodLog','plan','recentFoods','customFoods','sessionPlan','customExos','profileSet'];
+const SYNC_SECTIONS=['profile','program','startDate','weightLog','workoutLog','exoState','foodLog','plan','recentFoods','customFoods','sessionPlan','customExos','profileSet'];
 /* sections dont on fusionne les entrées une à une (clé = date ou id) */
 const ENTRY_SECTIONS=['workoutLog','foodLog','exoState','sessionPlan','customExos'];
 let IS_FIRST_RUN=false;try{IS_FIRST_RUN=!localStorage.getItem('ectomass_v2')}catch(e){}
@@ -940,11 +956,13 @@ function targets(){
 /* ---------------- EXERCISE LIBRARY ---------------- */
 // role: L=compound lower(+5kg), U=compound upper(+2.5), I=isolation(+2.5) ; warm=séries d'échauffement ; tempo=excentrique-pause-concentrique
 const EX={
-  squat:{n:"Squat barre",role:'L',rep:[6,8],rest:150,tempo:"3-0-1",warm:true,m:["Quadriceps","Fessiers","Lombaires"],cue:"Descends cuisses parallèles, dos gainé, poussée talons.",
+  squat:{n:"Squat barre",role:'L',rep:[6,8],rest:150,tempo:"3-0-1",warm:true,m:["Quadriceps","Fessiers","Lombaires"],
+    morpho:{seg:'femurs',val:'long',lvl:'warn',txt:"Fémurs longs : le buste bascule fortement vers l'avant pour garder l'équilibre, le bas du dos travaille souvent avant les cuisses. Garde-le pour la force, mais compte sur la presse ou le squat avant pour le volume quadriceps."},cue:"Descends cuisses parallèles, dos gainé, poussée talons.",
     setup:"Barre sur le haut des trapèzes, mains un peu plus larges que les épaules. Pieds largeur d'épaules, pointes légèrement ouvertes. Gonfle l'abdomen (gainage).",
     exec:"Descends en poussant les hanches vers l'arrière ET en pliant les genoux, jusqu'à cuisses parallèles. Remonte en poussant le sol, genoux dans l'axe des pieds.",
     err:"Genoux qui rentrent, talons qui décollent, dos qui s'arrondit, demi-amplitude.",alt:"Squat gobelet, presse à cuisses, hack squat"},
-  frontsquat:{n:"Squat avant / gobelet",role:'L',rep:[8,10],rest:120,tempo:"3-1-1",warm:true,m:["Quadriceps"],cue:"Coudes hauts, buste droit, contrôle la descente.",
+  frontsquat:{n:"Squat avant / gobelet",role:'L',rep:[8,10],rest:120,tempo:"3-1-1",warm:true,m:["Quadriceps"],
+    morpho:{seg:'femurs',val:'long',lvl:'good',txt:"Fémurs longs : la charge devant oblige le buste à rester vertical, ce qui reporte le travail sur les cuisses au lieu du bas du dos."},cue:"Coudes hauts, buste droit, contrôle la descente.",
     setup:"Barre sur l'avant des épaules (coudes hauts) ou haltère tenu contre la poitrine. Pieds largeur d'épaules.",
     exec:"Descends bien droit, coudes toujours hauts, jusqu'en bas. Remonte en gardant le buste vertical.",
     err:"Buste qui bascule en avant, coudes qui tombent.",alt:"Squat barre, presse à cuisses"},
@@ -952,7 +970,7 @@ const EX={
     setup:"Barre au-dessus du milieu des pieds, tibias à ~2 cm. Prise un peu plus large que les jambes. Hanches hautes, dos plat, épaules légèrement devant la barre.",
     exec:"Pousse le sol avec les jambes en gardant la barre collée aux jambes. Verrouille hanches et genoux en haut sans tirer en arrière. Redescends en poussant les hanches en arrière.",
     err:"Dos rond, barre qui s'éloigne des jambes, à-coups, hyperextension en haut.",alt:"Soulevé roumain, rack pull, hip thrust"},
-  rdl:{n:"Soulevé de terre roumain",role:'L',rep:[8,10],rest:120,tempo:"3-1-1",warm:true,m:["Ischios","Fessiers"],cue:"Pousse les hanches en arrière, légère flexion des genoux.",
+  rdl:{n:"Soulevé de terre roumain",role:'L',rep:[8,10],rest:120,tempo:"3-1-1",warm:true,m:["Ischios","Fessiers","Lombaires"],cue:"Pousse les hanches en arrière, légère flexion des genoux.",
     setup:"Debout, barre/haltères devant les cuisses, genoux légèrement fléchis, dos plat.",
     exec:"Pousse les hanches loin en arrière en descendant la barre le long des jambes jusqu'à sentir l'étirement des ischios (~mi-tibia). Reviens en contractant les fessiers.",
     err:"Arrondir le dos, plier les genoux comme un squat, descendre trop bas.",alt:"Good morning, leg curl, hip thrust"},
@@ -968,11 +986,12 @@ const EX={
     setup:"Pointes de pieds sur une marche/cale, talons dans le vide, charge tenue.",
     exec:"Monte le plus haut possible sur les pointes, pause 1s, descends lentement en étirant à fond.",
     err:"Amplitude écourtée, rebond, vitesse excessive.",alt:"Mollets assis, mollets à la presse"},
-  dc:{n:"Développé couché",role:'U',rep:[6,8],rest:150,tempo:"3-0-1",warm:true,m:["Pectoraux","Triceps","Épaules"],cue:"Omoplates serrées, barre au niveau des tétons.",
+  dc:{n:"Développé couché",role:'U',rep:[6,8],rest:150,tempo:"3-0-1",warm:true,m:["Pectoraux","Triceps","Épaules"],
+    morpho:{seg:'bras',val:'long',lvl:'warn',txt:"Bras longs : l'amplitude est très grande et l'épaule part loin en arrière en bas. Limite la descente ou préfère les haltères et le développé au sol."},cue:"Omoplates serrées, barre au niveau des tétons.",
     setup:"Allongé, yeux sous la barre, omoplates rétractées et abaissées, léger cambré, pieds ancrés au sol. Prise un peu plus large que les épaules.",
     exec:"Descends la barre au niveau du bas des pecs en gardant les coudes à ~45°. Touche la poitrine sans rebond, pousse jusqu'à l'extension.",
     err:"Coudes trop écartés (90°), rebond sur la poitrine, fesses qui décollent, demi-amplitude.",alt:"Développé haltères, développé machine, pompes lestées"},
-  dcinc:{n:"Développé incliné haltères",role:'U',rep:[8,10],rest:120,tempo:"3-0-1",warm:true,m:["Pectoraux (haut)","Épaules"],cue:"Banc à 30°, cible le haut des pecs.",
+  dcinc:{n:"Développé incliné haltères",role:'U',rep:[8,10],rest:120,tempo:"3-0-1",warm:true,m:["Pectoraux (haut)","Épaules","Triceps"],cue:"Banc à 30°, cible le haut des pecs.",
     setup:"Banc incliné 30°, haltères au niveau des épaules, omoplates serrées.",
     exec:"Descends les haltères jusqu'au niveau du haut des pecs, pousse en rapprochant légèrement les haltères en haut.",
     err:"Banc trop incliné (cible les épaules), amplitude courte, coudes trop ouverts.",alt:"Développé incliné barre, développé décliné"},
@@ -1000,7 +1019,8 @@ const EX={
     setup:"Prise pronation un peu plus large que les épaules (ou tirage vertical machine assis).",
     exec:"Tire en menant avec les coudes vers le bas, poitrine vers la barre, menton au-dessus. Descends bras tendus.",
     err:"Demi-amplitude, à-coups, ne pas descendre complètement.",alt:"Tirage vertical, tractions assistées élastique"},
-  dips:{n:"Dips",role:'U',rep:[8,12],rest:90,tempo:"3-0-1",m:["Pectoraux (bas)","Triceps"],cue:"Buste droit=triceps, penché=pecs.",
+  dips:{n:"Dips",role:'U',rep:[8,12],rest:90,tempo:"3-0-1",m:["Pectoraux (bas)","Triceps"],
+    morpho:{seg:'bras',val:'long',lvl:'warn',txt:"Bras longs : la descente devient très profonde et met l'épaule en position fragile. Descends moins bas que l'amplitude « complète » habituelle."},cue:"Buste droit=triceps, penché=pecs.",
     setup:"Aux barres parallèles, bras tendus, corps gainé.",
     exec:"Descends jusqu'à ce que les épaules soient au niveau des coudes (~90°), remonte en poussant. Penche-toi pour cibler les pecs.",
     err:"Descendre trop bas (épaules), rebond, épaules qui montent aux oreilles.",alt:"Dips machine, développé couché serré, pompes"},
@@ -1027,7 +1047,67 @@ const EX={
   crunch:{n:"Relevé de jambes",role:'I',rep:[12,15],rest:45,tempo:"2-1-2",m:["Abdos"],cue:"Contrôle, pas d'élan.",
     setup:"Allongé (ou suspendu à une barre), mains le long du corps ou à une prise.",
     exec:"Monte les jambes en enroulant légèrement le bassin, descends lentement sans cambrer.",
-    err:"Prendre de l'élan, cambrer le bas du dos, descendre trop vite.",alt:"Crunch, relevé de jambes suspendu, roue abdominale"}
+    err:"Prendre de l'élan, cambrer le bas du dos, descendre trop vite.",alt:"Crunch, relevé de jambes suspendu, roue abdominale"},
+
+  /* ---- Bloc morpho : exercices choisis pour segments longs (bras / fémurs) ----
+     Le principe : quand un levier est long, on privilégie les machines et les
+     variantes où l'amplitude et l'angle sont réglables, plutôt que de forcer
+     une barre libre dans une position que la morphologie rend défavorable. */
+  presse:{n:"Presse à cuisses",role:'L',rep:[8,10],rest:120,tempo:"3-1-1",warm:true,m:["Quadriceps","Fessiers"],
+    morpho:{seg:'femurs',val:'long',lvl:'good',txt:"Fémurs longs : le dossier encaisse la longueur du levier, tu charges les cuisses sans que le bas du dos limite."},
+    cue:"Pieds largeur d'épaules au milieu du plateau, ne verrouille jamais les genoux.",
+    setup:"Dos et bassin plaqués contre le dossier. Pieds à plat, largeur d'épaules, au milieu du plateau. Règle le dossier pour que les hanches ne décollent pas en bas.",
+    exec:"Descends jusqu'à ~90° de flexion du genou, ou dès que le bassin commence à s'enrouler. Remonte sans verrouiller les genoux pour garder la tension.",
+    err:"Bassin qui décolle en bas (dos rond), genoux verrouillés en haut, pieds trop hauts ou trop bas sur le plateau.",alt:"Hack squat, squat gobelet, squat bulgare"},
+  bulgare:{n:"Squat bulgare",role:'L',rep:[8,10],rest:90,tempo:"3-1-1",m:["Quadriceps","Fessiers"],
+    morpho:{seg:'femurs',val:'long',lvl:'good',txt:"Fémurs longs : en fente, un seul fémur travaille à la fois — le buste reste droit et l'amplitude devient exploitable."},
+    cue:"Pied arrière surélevé, descends à la verticale, poids sur la jambe avant.",
+    setup:"Pied arrière posé sur un banc (~40 cm), jambe avant assez loin pour que le genou reste au-dessus du pied. Haltères le long du corps.",
+    exec:"Descends en gardant le buste droit jusqu'à ce que la cuisse avant soit parallèle. Remonte en poussant dans le talon avant. Termine toutes les reps d'un côté avant de changer.",
+    err:"Jambe avant trop proche du banc, buste qui bascule, poussée sur la jambe arrière.",alt:"Fentes marchées, presse à cuisses unilatérale, split squat"},
+  fentes:{n:"Fentes marchées",role:'L',rep:[10,12],rest:90,tempo:"2-0-1",m:["Quadriceps","Fessiers","Ischios"],
+    cue:"Grand pas, genou arrière vers le sol, buste droit.",
+    setup:"Haltères le long du corps, buste droit, regard loin devant.",
+    exec:"Fais un grand pas, descends le genou arrière près du sol, puis pousse dans le talon avant pour enchaîner le pas suivant. Compte une rep par jambe.",
+    err:"Pas trop court (genou qui dépasse loin le pied), buste penché, descente non contrôlée.",alt:"Squat bulgare, fentes statiques, presse à cuisses"},
+  legcurl:{n:"Leg curl allongé",role:'I',rep:[10,12],rest:75,tempo:"2-1-3",m:["Ischios"],
+    cue:"Bassin plaqué, contrôle la descente, ne décolle pas les hanches.",
+    setup:"Allongé sur la machine, rouleau juste au-dessus des talons, bassin bien plaqué sur le banc.",
+    exec:"Fléchis les genoux jusqu'à la contraction complète, marque un temps, puis redescends lentement en résistant sur toute l'amplitude.",
+    err:"Hanches qui décollent, à-coups, amplitude partielle, descente relâchée.",alt:"Leg curl assis, soulevé de terre roumain, good morning"},
+  floorpress:{n:"Développé haltères au sol",role:'U',rep:[8,10],rest:120,tempo:"3-1-1",warm:true,m:["Pectoraux","Triceps","Épaules"],
+    morpho:{seg:'bras',val:'long',lvl:'good',txt:"Bras longs : le sol bloque la descente avant que l'épaule ne parte trop en arrière — tu gardes la charge sans la contrainte articulaire du couché complet."},
+    cue:"Coudes à ~45°, les triceps touchent le sol, puis pousse.",
+    setup:"Allongé au sol, genoux fléchis, haltères au-dessus des épaules, coudes à environ 45° du buste.",
+    exec:"Descends jusqu'à ce que l'arrière des bras touche le sol, marque un temps sans relâcher, puis pousse sans verrouiller les coudes.",
+    err:"Rebondir sur le sol, coudes trop écartés, verrouillage complet qui coupe la tension.",alt:"Développé couché haltères, développé machine, développé incliné"},
+  ecarte:{n:"Écarté couché haltères",role:'I',rep:[10,12],rest:75,tempo:"3-1-2",m:["Pectoraux"],
+    cue:"Coudes légèrement fléchis et fixes, cherche l'étirement en bas.",
+    setup:"Allongé sur un banc plat ou légèrement incliné, haltères au-dessus de la poitrine, coudes très légèrement fléchis.",
+    exec:"Ouvre les bras en arc de cercle jusqu'à sentir l'étirement des pectoraux, sans forcer l'épaule. Reviens en fermant l'arc, sans que les haltères se touchent.",
+    err:"Coudes qui se plient (ça devient un développé), descente trop basse pour l'épaule, charge trop lourde.",alt:"Écarté à la poulie vis-à-vis, pec-deck, écarté incliné"},
+  tiragenut:{n:"Tirage vertical prise neutre",role:'U',rep:[8,10],rest:120,tempo:"2-1-2",warm:true,m:["Dos (grand dorsal)","Biceps"],
+    morpho:{seg:'bras',val:'long',lvl:'good',txt:"Bras longs : la prise neutre raccourcit le bras de levier et épargne l'épaule, là où la traction pronation impose une amplitude très longue."},
+    cue:"Tire les coudes vers les hanches, poitrine ouverte.",
+    setup:"Poignée en prise neutre (paumes face à face), cuisses bien calées, buste très légèrement incliné en arrière.",
+    exec:"Tire la poignée vers le haut de la poitrine en amenant les coudes vers les hanches. Contrôle la remontée jusqu'à l'étirement complet du dos.",
+    err:"Tirer avec les bras seuls, se balancer, remontée relâchée.",alt:"Tractions prise neutre, tirage poitrine, rowing barre"},
+  curlincline:{n:"Curl incliné haltères",role:'I',rep:[10,12],rest:60,tempo:"3-1-2",m:["Biceps"],
+    morpho:{seg:'bras',val:'long',lvl:'good',txt:"Bras longs : le banc incliné met le biceps en étirement complet, la position où il gagne le plus d'épaisseur."},
+    cue:"Bras qui pendent en arrière, ne triche pas avec l'épaule.",
+    setup:"Assis sur un banc incliné à ~45-60°, bras pendants le long du dossier, paumes vers l'avant.",
+    exec:"Monte les haltères sans avancer les coudes, contracte en haut, puis redescends lentement jusqu'à l'extension complète.",
+    err:"Avancer les coudes, écourter la descente, cambrer pour lancer la charge.",alt:"Curl haltères debout, curl pupitre, curl poulie basse"},
+  tricepsnuque:{n:"Extension triceps au-dessus de la tête",role:'I',rep:[12,15],rest:60,tempo:"3-1-2",m:["Triceps"],
+    cue:"Coudes serrés et hauts, cherche l'étirement derrière la nuque.",
+    setup:"Debout ou assis, un haltère tenu à deux mains (ou une corde à la poulie), bras tendus au-dessus de la tête.",
+    exec:"Descends derrière la nuque en gardant les coudes serrés et pointés vers le haut, jusqu'à l'étirement. Remonte sans verrouiller.",
+    err:"Coudes qui s'écartent, épaules qui montent, amplitude écourtée.",alt:"Extension à la poulie haute, barre au front, dips machine"},
+  molletsassis:{n:"Mollets assis",role:'I',rep:[12,15],rest:60,tempo:"2-2-2",m:["Mollets"],
+    cue:"Amplitude complète, pause en bas comme en haut.",
+    setup:"Assis, genoux fléchis à 90° sous la charge, pointes de pieds sur la cale, talons dans le vide.",
+    exec:"Descends les talons jusqu'à l'étirement complet, marque 2 secondes, puis monte sur la pointe et marque la contraction.",
+    err:"Rebondir, amplitude écourtée, aller trop vite.",alt:"Mollets debout, presse à mollets, mollets un pied"}
 };
 const SESSIONS={
   A:{name:"Séance A — Pousser dominant",tip:"Priorité squat + développé couché. Charge progressivement selon les reco vertes.",
@@ -1035,8 +1115,31 @@ const SESSIONS={
   B:{name:"Séance B — Tirer & postérieur",tip:"Le soulevé de terre est le roi de la masse. Lourd mais dos plat.",
      exos:["sdt","dcinc","traction","rdl","elevlat","curl"]},
   C:{name:"Séance C — Volume & bras",tip:"Un peu plus léger, plus de volume. Focus connexion muscle-esprit.",
-     exos:["frontsquat","dchalt","rowhalt","dips","marteau","mollets"]}
+     exos:["frontsquat","dchalt","rowhalt","dips","marteau","mollets"]},
+  /* Bloc morpho : mêmes principes, exercices choisis pour segments longs.
+     Les jambes y sont doublées — c'était le trou du bloc Fondation. */
+  D:{name:"Séance D — Quadriceps & poussée",tip:"Presse et fentes plutôt que squat barre : avec des fémurs longs, tu charges les cuisses au lieu du bas du dos.",
+     exos:["presse","bulgare","floorpress","ecarte","rowhalt","mollets"]},
+  E:{name:"Séance E — Chaîne postérieure & tirage",tip:"Le roumain et le leg curl couvrent les deux fonctions des ischios. Prise neutre au tirage pour épargner l'épaule.",
+     exos:["rdl","legcurl","tiragenut","rowbarre","curlincline","gainage"]},
+  F:{name:"Séance F — Volume & finition",tip:"Buste vertical au squat avant, unilatéral aux fentes, puis étirement sur les bras et les mollets.",
+     exos:["frontsquat","fentes","dcinc","elevlat","tricepsnuque","molletsassis"]}
 };
+/* Deux blocs de trois séances : on en suit un à la fois. Six séances dans la
+   même semaine n'aurait aucun sens pour une morphologie qui récupère mal. */
+const PROGRAMS={
+  fondation:{n:"Fondation",desc:"Barres libres, 3 séances full-body. La base pour apprendre les mouvements.",s:['A','B','C']},
+  morpho:{n:"Morpho",desc:"Exercices choisis pour segments longs, volume jambes doublé.",s:['D','E','F']}
+};
+function progKey(){return PROGRAMS[DB.program]?DB.program:'fondation'}
+function progSessions(){return PROGRAMS[progKey()].s}
+function progOf(sess){return Object.keys(PROGRAMS).find(k=>PROGRAMS[k].s.includes(sess))||'fondation'}
+/* Mise en garde morphologique : ne s'affiche que si elle concerne l'utilisateur */
+function morphoNote(id){
+  const m=exDef(id).morpho;if(!m)return null;
+  const mp=(DB.profile&&DB.profile.morpho)||{};
+  return mp[m.seg]===m.val?m:null;
+}
 // 12-week progression: setMod (± sets), repAdj (target = repHi + repAdj), intensity label, deload, rir (reps en réserve)
 /* les libellés étaient coupés à 6 caractères : « Adapta », « Intens »,
    et « Deload / test » devenait indiscernable d'un vrai deload */
@@ -1254,7 +1357,7 @@ function dayTotals(date){const items=(DB.foodLog[date]||{}).items||[];return ite
 function macroPills(p,c,f){return `<span class="pill p">P ${R(p)}g</span> <span class="pill c">G ${R(c)}g</span> <span class="pill f">L ${R(f)}g</span>`}
 function weekStartKey(){const d=new Date(todayKey());const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);return todayKey(d)}
 function weekWorkoutsDone(){const ws=new Date(weekStartKey());return Object.keys(DB.workoutLog).filter(k=>new Date(k)>=ws)}
-function doneThisWeek(){return new Set(weekWorkoutsDone().map(k=>DB.workoutLog[k].session)).size}
+function doneThisWeek(){const act=progSessions();return new Set(weekWorkoutsDone().map(k=>DB.workoutLog[k].session).filter(s=>act.includes(s))).size}
 
 /* ---------------- RENDER: HOME ---------------- */
 let currentSession=(DB.view&&DB.view.session)||'A';
@@ -1277,15 +1380,16 @@ function renderHome(){
   }else{$('#stat-trend').style.color='';$('#stat-trend').title=''}
   const pw=programWeek(),wk=currentWeekIdx(),preview=(wk!==pw);
   $('#stat-week').innerHTML=(pw+1)+'<small style="font-size:11px;color:var(--muted2)">/12</small>';
-  $('#stat-streak').innerHTML=doneThisWeek()+'<small style="font-size:11px;color:#4a2408">/3</small>';
+  $('#stat-streak').innerHTML=doneThisWeek()+'<small style="font-size:11px;color:#4a2408">/'+progSessions().length+'</small>';
   $('#home-phase').textContent='Semaine '+(pw+1)+'/12 · '+WEEKS[pw].ph;
 
   // recommended session = first letter not yet done this week (by session, not count)
   const doneLetters=new Set(weekWorkoutsDone().map(k=>DB.workoutLog[k].session));
-  const allDone=doneLetters.has('A')&&doneLetters.has('B')&&doneLetters.has('C');
-  const next=['A','B','C'].find(l=>!doneLetters.has(l))||'A';
+  const act=progSessions();
+  const allDone=act.every(l=>doneLetters.has(l));
+  const next=act.find(l=>!doneLetters.has(l))||act[0];
   /* la carte suit la séance réellement sélectionnée, pas seulement la conseillée */
-  const shown=SESSIONS[currentSession]?currentSession:next;
+  const shown=(SESSIONS[currentSession]&&act.includes(currentSession))?currentSession:next;
   const isReco=(shown===next)&&!allDone;
   $('#home-w-title').textContent=isReco?'Séance recommandée':'Séance sélectionnée';
   $('#home-w-tag').textContent=WEEKS[wk].deload?'Deload':'Semaine '+(wk+1);
@@ -1307,12 +1411,12 @@ function renderHome(){
   // water
   renderWater();
   // week badges — by which sessions are actually done
-  $('#week-badges').innerHTML=['A','B','C'].map(w=>{
+  $('#week-badges').innerHTML=act.map(w=>{
     const done=doneLetters.has(w),sel=(w===shown),reco=(w===next&&!allDone);
     return `<button type="button" class="wkbox ${done?'done':''} ${sel?'on':''}" style="width:auto;flex:1" data-pick-session="${w}" aria-pressed="${sel}"
       aria-label="Séance ${w}${done?', déjà faite cette semaine':', à faire'}${reco?', conseillée':''}${sel?', sélectionnée':''}"><b>${w}${reco?' •':''}</b><small>${done?'✓ fait':'à faire'}</small></button>`}).join('');
   const vol=weekWorkoutsDone().reduce((a,k)=>a+sessionVolume(DB.workoutLog[k]),0);
-  $('#week-vol').textContent=doneLetters.size+'/3 · '+R(vol)+' kg';
+  $('#week-vol').textContent=doneThisWeek()+'/'+act.length+' · '+R(vol)+' kg';
   const wl2=$('#week-legend');if(wl2)wl2.textContent=allDone?'Les trois séances sont faites — repos ou reprise libre.':'Touche une séance pour l\'ouvrir. Le point marque celle conseillée.';
 
   const pw2=$('#profile-warn');if(pw2)pw2.style.display=DB.profileSet?'none':'flex';
@@ -1400,10 +1504,33 @@ function renderWeekStrip(){
 }
 function setWeek(i){DB.view.week=(i===programWeek())?null:i;save();renderWeekStrip();renderExos();renderHome();}
 function selectSession(s){
-  if(!SESSIONS[s])s='A';
+  if(!SESSIONS[s])s=progSessions()[0];
+  /* choisir une séance d'un autre bloc bascule le bloc : sinon l'accueil et
+     l'objectif hebdomadaire parleraient d'un programme qu'on ne suit plus */
+  const pk=progOf(s);if(pk!==progKey()){DB.program=pk;renderProgPick();renderSessionSeg();renderHome()}
   currentSession=s;DB.view.session=s;save();
   $$('#session-seg button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));syncTabs('#session-seg');
   renderExos();}
+function renderSessionSeg(){
+  const box=$('#session-seg');if(!box)return;
+  box.innerHTML=progSessions().map(s=>{const on=s===currentSession;
+    return `<button role="tab" aria-selected="${on}" ${on?'class="on"':'tabindex="-1"'} data-s="${s}">Séance ${s}</button>`}).join('');
+  syncTabs('#session-seg');
+}
+function renderProgPick(){
+  const box=$('#prog-pick');if(!box)return;
+  const cur=progKey();
+  box.innerHTML=`<div class="seg" role="group" aria-label="Bloc d'entraînement">${Object.keys(PROGRAMS).map(k=>
+    `<button type="button" ${k===cur?'class="on"':''} data-prog="${k}" aria-pressed="${k===cur}">${esc(PROGRAMS[k].n)}</button>`).join('')}</div>
+    <div class="small muted" style="margin-top:6px">${esc(PROGRAMS[cur].desc)}</div>`;
+}
+function setProgram(k){
+  if(!PROGRAMS[k]||k===progKey())return;
+  DB.program=k;
+  currentSession=progSessions()[0];DB.view.session=currentSession;save();
+  renderProgPick();renderSessionSeg();renderExos();renderHome();renderWeekStrip();
+  toast('Bloc « '+PROGRAMS[k].n+' » activé');
+}
 function lastSessionData(sess){const keys=Object.keys(DB.workoutLog).filter(k=>DB.workoutLog[k].session===sess).sort();return keys.length?DB.workoutLog[keys[keys.length-1]].exos:{}}
 /* ---- Brouillon de séance : rien de saisi ne doit être perdu ---- */
 function getDraft(){const d=DB.draft;return (d&&d.date===todayKey())?d:null}
@@ -1504,6 +1631,7 @@ function renderExos(){
         </div>
         <div class="small muted" style="margin-bottom:8px">💬 ${esc(e.cue)}</div>
         ${e.warm?`<div class="warmnote">🔥 <b>Échauffement</b> : 2-3 séries progressives. Appuie sur le n° de série pour la marquer « W » (exclue des PR/volume).</div>`:''}
+        ${(()=>{const mn=morphoNote(id);return mn?`<div class="morphonote ${mn.lvl}">${mn.lvl==='good'?'🧬 <b>Adapté à ta morphologie</b>':'🧬 <b>Attention à ta morphologie</b>'} — ${esc(mn.txt)}</div>`:''})()}
         ${recoTxt}
         <div class="setrow" style="color:var(--muted);font-size:11px"><div class="sn" style="background:none">Série</div><div style="text-align:center">${isTime?'':'Charge'}</div><div style="text-align:center">${isTime?'Secondes':'Reps'}</div><div style="text-align:center">1RM</div><div></div></div>
         ${sets}
@@ -1695,7 +1823,7 @@ function showSessionSummary(session,dateKey,prs){
     <div class="summary-row"><span class="small">Volume soulevé</span><span class="sv">${vol>=1000?R(vol/1000,2)+' t':R(vol)+' kg'}</span></div>
     <div class="summary-row"><span class="small">Séries de travail</span><span class="sv">${sets.length}</span></div>
     <div class="summary-row"><span class="small">Répétitions</span><span class="sv">${reps}</span></div>
-    <div class="summary-row"><span class="small">Séances cette semaine</span><span class="sv">${doneThisWeek()}/3</span></div>`;
+    <div class="summary-row"><span class="small">Séances cette semaine</span><span class="sv">${doneThisWeek()}/${progSessions().length}</span></div>`;
   $('#summary-prs').innerHTML=(prs&&prs.length)
     ? `<div class="summary-pr"><div class="hd">🏅 ${prs.length>1?'Nouveaux records':'Nouveau record'}</div>${prs.map(p=>`<div class="prow"><span>${esc(p.n)}</span><b>${p.w} kg <span class="muted" style="font-weight:600">(+${R(p.w-p.prev,1)})</span></b></div>`).join('')}</div>`
     : '';
@@ -2101,6 +2229,7 @@ function renderProfile(){
   if(bs)bs.textContent=DB.lastExport?('Dernière sauvegarde il y a '+daysSinceExport()+' jour'+(daysSinceExport()>1?'s':'')):'Jamais sauvegardé — tes données ne vivent que dans ce navigateur.';
   updNotifUI();
   const p=DB.profile;$('#pf-age').value=p.age;$('#pf-height').value=p.height;$('#pf-weight').value=p.weight;$('#pf-activity').value=p.activity;$('#pf-surplus').value=p.surplus;$('#pf-meals').value=p.meals;
+  const mo=p.morpho||{};$('#pf-bras').value=mo.bras||'moyen';$('#pf-femurs').value=mo.femurs||'moyen';
   $$('#pf-sex button').forEach(b=>b.classList.toggle('on',b.dataset.v===p.sex));
   const t=targets();
   $('#profile-results').innerHTML=`<div class="grid g3" style="margin-bottom:12px"><div class="stat"><b>${t.bmr}</b><small>Métabolisme</small></div><div class="stat"><b>${t.tdee}</b><small>TDEE</small></div><div class="stat hot"><b>${t.kcal}</b><small>Objectif</small></div></div>
@@ -2125,7 +2254,10 @@ function saveProfile(){
     const r=readBounded(id,k,p[k]);p[k]=r.v;if(r.msg)msgs.push(r.msg);
   });
   p.activity=+$('#pf-activity').value;p.surplus=+$('#pf-surplus').value;p.meals=+$('#pf-meals').value;
+  p.morpho=Object.assign({},p.morpho,{bras:$('#pf-bras').value,femurs:$('#pf-femurs').value});
   DB.profileSet=true;save();renderProfile();renderHome();
+  /* les fiches d'exercices portent les repères morpho : elles doivent suivre */
+  if(typeof renderExos==='function'&&$('#exo-list'))renderExos();
   if(msgs.length)toast(msgs[0],'warn');
 }
 
@@ -2183,7 +2315,10 @@ window.addEventListener('popstate',e=>{
   const p=(e.state&&e.state.p)||(location.hash||'#home').slice(1);
   go(TITLES[p]?p:'home',true);
 });
-$$('#session-seg button').forEach(b=>b.onclick=()=>selectSession(b.dataset.s));
+/* délégation : les deux barres sont reconstruites à chaque changement de bloc */
+$('#session-seg').addEventListener('click',e=>{const b=e.target.closest('button[data-s]');if(b)selectSession(b.dataset.s)});
+$('#prog-pick').addEventListener('click',e=>{const b=e.target.closest('button[data-prog]');if(b)setProgram(b.dataset.prog)});
+renderProgPick();renderSessionSeg();
 $('#save-workout').onclick=saveWorkout;
 (function bindNotes(){
   const ta=$('#session-notes');if(!ta)return;
@@ -2237,7 +2372,7 @@ $('#show-week-shopping').onclick=()=>openShopping(weekDays(),'7 jours');
 $('#close-swap').onclick=()=>closeModal('#swap-modal');
 $('#water-add').onclick=()=>changeWater(250);$('#water-sub').onclick=()=>changeWater(-250);
 
-['pf-age','pf-height','pf-weight','pf-activity','pf-surplus','pf-meals'].forEach(id=>$('#'+id).addEventListener('change',saveProfile));
+['pf-age','pf-height','pf-weight','pf-activity','pf-surplus','pf-meals','pf-bras','pf-femurs'].forEach(id=>$('#'+id).addEventListener('change',saveProfile));
 $('#notif-toggle').onclick=()=>{if(!notifSupported())return;
   try{Notification.requestPermission().then(()=>{updNotifUI();if(Notification.permission==='granted')toast('Alerte activée 🔔')})}catch(e){updNotifUI()}};
 $$('#pf-sex button').forEach(b=>b.onclick=()=>{DB.profile.sex=b.dataset.v;$$('#pf-sex button').forEach(x=>x.classList.toggle('on',x===b));pressed('#pf-sex button',b);saveProfile()});
