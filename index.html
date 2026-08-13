@@ -227,8 +227,22 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(25
 .exo.open .body{display:block;animation:acc .34s var(--ease)}
 @keyframes acc{from{opacity:0;transform:translateY(-9px)}to{opacity:1;transform:none}}
 .reco{background:rgba(49,197,109,.10);border:1px solid rgba(49,197,109,.28);border-radius:10px;padding:8px 11px;font-size:12.5px;margin:8px 0 12px;display:flex;align-items:center;gap:8px}
-.setrow{display:grid;grid-template-columns:34px 1fr 1fr 44px 44px;gap:7px;align-items:center;margin-bottom:7px}
+.setrow{display:grid;grid-template-columns:28px 1fr 1fr 34px 44px;gap:4px;align-items:center;margin-bottom:7px}
 .setrow input{padding:11px 4px;text-align:center;min-height:44px}
+/* ---- Steppers +/− charge & reps (agent 1) ----
+   le clavier reste disponible en tapant le champ ; les boutons évitent de l'ouvrir */
+.stepper-wrap{display:flex;align-items:stretch;min-width:0}
+.stepper-wrap input{text-align:center;border-radius:0!important;border-left:none!important;border-right:none!important;
+  flex:1 1 0;min-width:0;padding-left:1px!important;padding-right:1px!important;font-size:13px;letter-spacing:-.02em}
+.stepper-wrap .step-btn{flex:0 0 28px;width:28px;min-height:44px;background:var(--bg2);border:1px solid var(--line2);
+  color:var(--muted);font-size:17px;font-weight:700;line-height:1;display:grid;place-items:center;cursor:pointer;
+  transition:background .18s,color .18s,transform .18s var(--spring)}
+.stepper-wrap .step-btn:first-child{border-radius:11px 0 0 11px}
+.stepper-wrap .step-btn:last-child{border-radius:0 11px 11px 0}
+.stepper-wrap .step-btn:active{background:var(--card3);color:var(--txt);transform:scale(.9)}
+@media(hover:hover){.stepper-wrap .step-btn:hover{background:var(--card3);color:var(--txt)}}
+.setrow.is-warm .stepper-wrap .step-btn{border-color:rgba(255,176,32,.45)}
+@media(min-width:520px){.stepper-wrap .step-btn{flex-basis:34px;width:34px}}
 .setrow .sn{text-align:center;font-weight:750;color:var(--muted);font-size:13px;position:relative}
 .setrow button.sn{cursor:pointer;border-radius:8px;min-height:44px;transition:.2s var(--spring)}
 .setrow button.sn:active{transform:scale(.9)}
@@ -400,6 +414,36 @@ body.offline .offbar{display:flex}
 .setrow .done.locked{opacity:.38}
 .empty-chart{text-align:center;color:var(--muted);font-size:13px;padding:22px 10px 18px}
 .empty-chart .ico{font-size:30px;margin-bottom:6px}
+/* ---- Empty states motivants (agent 3) ---- */
+.empty-chart .ec-t{display:block;color:var(--txt);font-size:14px;font-weight:750;margin-bottom:5px}
+.empty-chart .ec-d{display:block;font-size:12.5px;line-height:1.5;max-width:34ch;margin:0 auto}
+.empty-chart .ec-hint{display:inline-block;margin-top:10px;font-size:11px;font-weight:700;color:var(--accent2);
+  background:var(--card3);padding:5px 11px;border-radius:20px}
+/* ---- KPI de progression sur l'accueil (agent 4) ---- */
+.kpi-row{display:flex;flex-wrap:wrap;gap:9px}
+.kpi-chip{flex:1 1 120px;min-width:0;background:var(--card2);border:1px solid var(--line);border-radius:13px;
+  padding:9px 12px;display:flex;flex-direction:column;gap:2px}
+.kpi-chip .kv{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--txt);white-space:nowrap}
+.kpi-chip .kl{font-size:10.5px;color:var(--muted2);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.kpi-chip .kt{font-size:11px;color:var(--accent2)}
+.kpi-chip.good{border-color:rgba(49,197,109,.30);background:rgba(49,197,109,.06)}
+.kpi-chip.warn{border-color:rgba(255,176,32,.30);background:rgba(255,176,32,.06)}
+.kpi-chip.bad{border-color:rgba(255,90,82,.30);background:rgba(255,90,82,.06)}
+/* ---- Bandeau macros restantes, page Nutrition (agent 2) ---- */
+#food-macro-summary{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:0 0 10px;padding:9px 13px;
+  background:linear-gradient(135deg,rgba(255,107,53,.10),rgba(255,107,53,.03));
+  border:1px solid rgba(255,107,53,.22);border-radius:13px}
+#food-macro-summary .lb{font-size:12px;font-weight:750;color:var(--accent2)}
+#food-macro-summary .pill{font-size:12px}
+#food-macro-summary .pill.over{background:rgba(255,90,82,.16);color:var(--red)}
+/* ---- Résumé de fin de séance (agent 5) ---- */
+#summary-stats .summary-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line2)}
+#summary-stats .summary-row:last-child{border-bottom:none}
+.summary-row .sv{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--accent)}
+.summary-pr{background:rgba(255,166,61,.12);border:1px solid rgba(255,166,61,.34);border-radius:13px;padding:10px 13px;margin-top:12px}
+.summary-pr .hd{font-size:12px;font-weight:800;color:var(--accent2);margin-bottom:6px}
+.summary-pr .prow{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px}
+.summary-pr .prow b{color:var(--accent2);font-variant-numeric:tabular-nums}
 
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -450,6 +494,7 @@ body.offline .offbar{display:flex}
             <div class="stat"><b id="stat-week">1</b><small>semaine</small></div>
             <div class="stat hot"><b id="stat-streak">0</b><small>séances cette sem.</small></div>
           </div>
+          <div id="home-kpi" style="margin-bottom:14px"></div>
           <div class="tip"><span class="i">💡</span><div id="home-tip"></div></div>
         </div>
         <div>
@@ -525,6 +570,13 @@ body.offline .offbar{display:flex}
             <div class="water" id="water-drops2"></div>
           </div>
         </div>
+        <div id="food-macro-summary" style="margin-top:12px" aria-live="polite">
+          <span class="lb">Il reste :</span>
+          <span id="food-remain-kcal" class="pill k">— kcal</span>
+          <span id="food-remain-p" class="pill p">P —g</span>
+          <span id="food-remain-c" class="pill c">G —g</span>
+          <span id="food-remain-f" class="pill f">L —g</span>
+        </div>
         <button class="btn" id="add-food-btn" style="margin:6px 0 14px">＋ Ajouter un aliment</button>
         <div id="food-log-list"></div>
       </div>
@@ -565,14 +617,14 @@ body.offline .offbar{display:flex}
         <div class="card">
           <h3>Volume par groupe musculaire <span class="small">(7 j)</span></h3>
           <canvas id="muscle-chart" height="180" role="img" aria-label="Volume par groupe musculaire sur 7 jours"></canvas>
-          <div class="small muted" id="muscle-empty" style="text-align:center;padding:18px;display:none">Enregistre des séances pour voir ton volume 💪</div>
+          <div class="empty-chart" id="muscle-empty" style="display:none"></div>
         </div>
       </div>
       <div class="card">
         <div class="between"><h3 style="margin:0">Force par exercice</h3><span class="pill" id="lift-pr"></span></div>
         <div class="segline" id="lift-seg" style="margin:10px 0 12px"></div>
         <canvas id="lift-chart" height="180" role="img" aria-label="Évolution de la charge par exercice"></canvas>
-        <div class="small muted" id="lift-empty" style="text-align:center;padding:20px;display:none">Aucune donnée de charge pour l'instant.</div>
+        <div class="empty-chart" id="lift-empty" style="display:none"></div>
         <div class="small" id="lift-stats" style="margin-top:10px"></div>
       </div>
       <div class="grid g2 mstack">
@@ -724,6 +776,16 @@ body.offline .offbar{display:flex}
   <div class="g2 grid"><label class="field"><span>Charge totale (kg)</span><input type="number" id="plate-total" inputmode="decimal" value="60"></label><label class="field"><span>Barre (kg)</span><input type="number" id="plate-bar" inputmode="decimal" value="20"></label></div>
   <div class="small" style="margin-bottom:6px">Par côté :</div><div class="plate" id="plate-out"></div>
   <div class="small muted" id="plate-note"></div>
+</div></div>
+
+<!-- Résumé de fin de séance -->
+<div class="modal" id="summary-modal" role="dialog" aria-modal="true" aria-labelledby="summary-title"><div class="sheet">
+  <div style="text-align:center;margin-bottom:12px"><div style="font-size:38px">🏆</div>
+    <h2 id="summary-title" style="margin:6px 0 2px">Séance terminée !</h2>
+    <div class="small muted" id="summary-subtitle"></div></div>
+  <div id="summary-stats"></div>
+  <div id="summary-prs"></div>
+  <button class="btn" id="summary-close" style="width:100%;margin-top:16px">Retour au tableau de bord</button>
 </div></div>
 
 <!-- Onboarding modal -->
@@ -1243,8 +1305,35 @@ function renderHome(){
   if(bw){const due=backupDue();bw.style.display=due?'flex':'none';
     if(due)bw.innerHTML=`💾 <span style="flex:1;min-width:170px"><b>Sauvegarde recommandée</b> — vider le cache du navigateur effacerait tout. ${DB.lastExport?'Dernière sauvegarde il y a '+daysSinceExport()+' jours.':'Jamais sauvegardé.'}</span><button class="btn ghost mini" onclick="exportData()">Sauvegarder</button><button class="btn ghost mini" onclick="snoozeBackup()">Plus tard</button>`}
 
+  renderHomeProg();
+
   const tips=["Bois un shake gainer entre deux repas si tu peines à finir tes assiettes.","+1 c.à.s d'huile d'olive = +135 kcal sans volume dans l'estomac.","7-9h de sommeil : c'est là que le muscle se construit.","Limite le cardio à 1-2×20 min/sem pour préserver ton surplus.","Pèse-toi le matin à jeun, même jour, pour un suivi fiable.","Stagnation 2 semaines ? +150 kcal/jour.","Priorise les glucides autour de l'entraînement.","Applique les charges conseillées (vertes) : c'est ta surcharge progressive."];
   $('#home-tip').textContent=tips[new Date().getDate()%tips.length];
+}
+/* Trois verdicts sur 7 jours : les tuiles au-dessus donnent les chiffres,
+   cette rangée dit ce qu'il faut en conclure (agent 4). */
+function renderHomeProg(){
+  const kpi=$('#home-kpi');if(!kpi)return;
+  const t=targets();
+  const days7=[...Array(7)].map((_,i)=>todayKey(new Date(Date.now()-i*864e5)));
+  const fed=days7.filter(d=>dayTotals(d).k>0);
+  const surplusOk=fed.filter(d=>dayTotals(d).k>=t.kcal-50).length;
+  const wkKeys=Object.keys(DB.workoutLog).filter(k=>days7.includes(k));
+  const wkVol=wkKeys.reduce((a,k)=>a+sessionVolume(DB.workoutLog[k]),0);
+  /* rien à interpréter tant que l'utilisateur n'a rien saisi : on n'affiche pas trois tirets */
+  if(!DB.weightLog.length&&!fed.length&&!wkKeys.length){kpi.innerHTML='';return}
+  const trend=weightTrendPerWeek(),v=trendVerdict(trend);
+  const chip=(cls,val,lab,note)=>`<div class="kpi-chip ${cls}"><span class="kv">${val}</span><span class="kl">${lab}</span><span class="kt">${note}</span></div>`;
+  const tCls=trend==null?'':v.k==='ideal'?'good':v.k==='rapide'?'warn':'bad';
+  const tNote=trend==null?(DB.weightLog.length?'3 pesées requises':'Note ton poids')
+    :v.k==='ideal'?'✅ Dans la cible':v.k==='rapide'?'⚠️ Trop rapide':'📉 Sous la cible';
+  const sCls=!fed.length?'':surplusOk>=5?'good':surplusOk>=3?'warn':'bad';
+  const sNote=!fed.length?'📌 Note tes repas':surplusOk===fed.length?'✅ Sans faute':surplusOk?'💪 Continue':'📉 Mange plus';
+  kpi.innerHTML=`<div class="kpi-row">
+    ${chip(tCls,trend==null?'—':(trend>0?'+':'')+trend.toFixed(2),'Tendance kg/sem',tNote)}
+    ${chip(sCls,fed.length?surplusOk+'/'+fed.length:'—','Surplus 7j',sNote)}
+    ${chip(wkVol>0?'good':'',wkVol>0?R(wkVol/1000,1)+' t':'—','Volume 7j',wkKeys.length?'🏋️ '+wkKeys.length+' séance'+(wkKeys.length>1?'s':''):'→ Lance une séance')}
+  </div>`;
 }
 function renderWaterInto(dropsSel,lblSel,date){
   const goal=targets().water,cups=Math.round(goal/250),e=dayFood(date),filled=Math.round((e.water||0)/250);
@@ -1338,6 +1427,24 @@ function discardDraft(){
   clearDraft(currentSession);renderExos();
   toast('Saisie effacée','warn',{label:'Annuler',fn:()=>{DB.draft=snap;save();renderExos()}});}
 
+/* Steppers +/− : en séance, on a les mains prises et le clavier numérique est lent.
+   Volontairement sans focus() — sinon le clavier s'ouvrirait à chaque appui. */
+function stepVal(btn,delta,max){
+  const wrap=btn.parentElement,inp=wrap&&wrap.querySelector('input');if(!inp)return;
+  const cur=parseFloat(inp.value);
+  const base=isNaN(cur)?(parseFloat(inp.placeholder)||0):cur;
+  const next=clamp(R(base+delta,2),0,max);
+  if(next===cur)return;
+  inp.value=next;inp.dispatchEvent(new Event('input',{bubbles:true}));
+}
+function stepper(input,delta,max,unit){
+  const d=fmtNum(delta);
+  return `<div class="stepper-wrap">
+    <button type="button" class="step-btn" tabindex="-1" aria-label="Retirer ${d} ${unit}" onclick="stepVal(this,-${delta},${max})">−</button>
+    ${input}
+    <button type="button" class="step-btn" tabindex="-1" aria-label="Ajouter ${d} ${unit}" onclick="stepVal(this,${delta},${max})">＋</button>
+  </div>`;
+}
 function renderExos(){
   const S=SESSIONS[currentSession],wk=currentWeekIdx();const exos=sessionExos(currentSession);
   const edited=isCustomSession(currentSession);
@@ -1363,8 +1470,8 @@ function renderExos(){
       const warm=v.warm;
       return `<div class="setrow ${warm?'is-warm':''}" data-exo="${id}" data-set="${si}"${warm?' data-warm="1"':''}>
         <button class="sn ${warm?'warm':''}" onclick="toggleWarm(this)" title="Marquer échauffement">${warm?'W':si+1}</button>
-        ${isTime?'<div class="small muted" style="text-align:center">durée</div>':`<input type="number" inputmode="decimal" class="in-w" min="0" max="${MAX_W}" step="0.5" enterkeyhint="next" aria-label="Charge série ${si+1}, ${esc(e.n)}" placeholder="${reco!=null?reco:'kg'}" value="${v.w}">`}
-        <input type="number" inputmode="numeric" class="in-r" min="0" max="${isTime?MAX_SEC:MAX_R}" step="1" enterkeyhint="next" aria-label="${isTime?'Secondes':'Répétitions'} série ${si+1}, ${esc(e.n)}" placeholder="${isTime?tReps||'sec':tReps}" value="${v.r}">
+        ${isTime?'<div class="small muted" style="text-align:center">durée</div>':stepper(`<input type="number" inputmode="decimal" class="in-w" min="0" max="${MAX_W}" step="0.5" enterkeyhint="next" aria-label="Charge série ${si+1}, ${esc(e.n)}" placeholder="${reco!=null?reco:'kg'}" value="${v.w}">`,0.5,MAX_W,'kg')}
+        ${stepper(`<input type="number" inputmode="numeric" class="in-r" min="0" max="${isTime?MAX_SEC:MAX_R}" step="1" enterkeyhint="next" aria-label="${isTime?'Secondes':'Répétitions'} série ${si+1}, ${esc(e.n)}" placeholder="${isTime?tReps||'sec':tReps}" value="${v.r}">`,isTime?5:1,isTime?MAX_SEC:MAX_R,isTime?'s':'rep')}
         <div class="e1" data-e1>—</div>
         <button class="done ${v.done?'on':''}" onclick="toggleDone(this,'${id}')">✓</button></div>`}).join('');
     const wc=cells.filter(c=>!c.warm);const isFin=wc.length>0&&wc.every(c=>c.done);finishedArr[idx]=isFin;
@@ -1489,7 +1596,7 @@ const MAX_W=500,MAX_R=100,MAX_SEC=900;
 function toggleWarm(btn){const row=btn.closest('.setrow');const on=row.getAttribute('data-warm')==='1';if(on){row.removeAttribute('data-warm');row.classList.remove('is-warm');btn.classList.remove('warm');const idx=[...row.parentElement.querySelectorAll('.setrow[data-exo]')].indexOf(row);btn.textContent=idx+1}else{row.setAttribute('data-warm','1');row.classList.add('is-warm');btn.classList.add('warm');btn.textContent='W'}saveDraft()}
 function addSetRow(btn,id){const body=btn.closest('.body');const rows=body.querySelectorAll('.setrow[data-exo]');const n=rows.length;const isTime=exDef(id).time;const div=document.createElement('div');div.className='setrow';div.setAttribute('data-exo',id);div.setAttribute('data-set',n);
   const exn=esc(exDef(id).n);
-  div.innerHTML=`<button class="sn" onclick="toggleWarm(this)" title="Marquer échauffement">${n+1}</button>${isTime?'<div class="small muted" style="text-align:center">durée</div>':`<input type="number" inputmode="decimal" class="in-w" min="0" max="${MAX_W}" step="0.5" enterkeyhint="next" aria-label="Charge série ${n+1}, ${exn}" placeholder="kg">`}<input type="number" inputmode="numeric" class="in-r" min="0" max="${isTime?MAX_SEC:MAX_R}" step="1" enterkeyhint="next" aria-label="${isTime?'Secondes':'Répétitions'} série ${n+1}, ${exn}" placeholder="reps"><div class="e1" data-e1>—</div><button class="done" onclick="toggleDone(this,'${id}')">✓</button>`;
+  div.innerHTML=`<button class="sn" onclick="toggleWarm(this)" title="Marquer échauffement">${n+1}</button>${isTime?'<div class="small muted" style="text-align:center">durée</div>':stepper(`<input type="number" inputmode="decimal" class="in-w" min="0" max="${MAX_W}" step="0.5" enterkeyhint="next" aria-label="Charge série ${n+1}, ${exn}" placeholder="kg">`,0.5,MAX_W,'kg')}${stepper(`<input type="number" inputmode="numeric" class="in-r" min="0" max="${isTime?MAX_SEC:MAX_R}" step="1" enterkeyhint="next" aria-label="${isTime?'Secondes':'Répétitions'} série ${n+1}, ${exn}" placeholder="reps">`,isTime?5:1,isTime?MAX_SEC:MAX_R,isTime?'s':'rep')}<div class="e1" data-e1>—</div><button class="done" onclick="toggleDone(this,'${id}')">✓</button>`;
   rows[rows.length-1].after(div);bindSetInputs();saveDraft();}
 function removeExo(idx){const arr=sessionExos(currentSession).slice();const [rm]=arr.splice(idx,1);setSessionExos(currentSession,arr);renderExos();toast('« '+exDef(rm).n+' » retiré');}
 function resetSession(){if(DB.sessionPlan)delete DB.sessionPlan[currentSession];save();renderExos();toast('Séance réinitialisée');}
@@ -1544,7 +1651,7 @@ async function saveWorkout(){
     });
     if(sets.length){exos[id]=sets;
       const st=DB.exoState[id]||{};
-      if(!e.time&&workSets>0){if(st.pr==null||topW>st.pr){if(st.pr!=null)prs.push(e.n);st.pr=topW;st.prDate=todayKey()}
+      if(!e.time&&workSets>0){if(st.pr==null||topW>st.pr){if(st.pr!=null)prs.push({n:e.n,w:topW,prev:st.pr});st.pr=topW;st.prDate=todayKey()}
         st.best1=Math.max(st.best1||0,best1);st.lastW=topW;st.hitTop=hitTop&&!WEEKS[wk].deload;}
       DB.exoState[id]=st;}
   });
@@ -1557,9 +1664,42 @@ async function saveWorkout(){
   const notes=($('#session-notes')&&$('#session-notes').value.trim())||'';
   DB.workoutLog[key]={session:currentSession,week:wk,exos,rir:collectRir(),notes,ts:Date.now()};clearDraft(currentSession);save();
   stopRest();
-  toast(prs.length?('💪 Séance + '+prs.length+' PR !'):'Séance enregistrée ! 💪');
+  const done=currentSession;
   renderWeekStrip();renderExos();renderHome();renderProgress();
+  showSessionSummary(done,key,prs);
 }
+/* Une séance validée méritait mieux qu'un toast : on la referme par un bilan (agent 5).
+   Les PR viennent de saveWorkout, seul endroit qui connaît l'ancien record. */
+function showSessionSummary(session,dateKey,prs){
+  const log=DB.workoutLog[dateKey];if(!log){toast('Séance enregistrée ! 💪');return}
+  const sets=Object.values(log.exos||{}).reduce((a,arr)=>a.concat(arr.filter(s=>!s.warm)),[]);
+  const vol=sessionVolume(log),reps=sets.reduce((a,s)=>a+(+s.r||0),0);
+  const S=SESSIONS[session];
+  $('#summary-subtitle').textContent=(S?S.name:'Séance '+session)+' · '+fmtDate(dateKey);
+  $('#summary-stats').innerHTML=`
+    <div class="summary-row"><span class="small">Volume soulevé</span><span class="sv">${vol>=1000?R(vol/1000,2)+' t':R(vol)+' kg'}</span></div>
+    <div class="summary-row"><span class="small">Séries de travail</span><span class="sv">${sets.length}</span></div>
+    <div class="summary-row"><span class="small">Répétitions</span><span class="sv">${reps}</span></div>
+    <div class="summary-row"><span class="small">Séances cette semaine</span><span class="sv">${doneThisWeek()}/3</span></div>`;
+  $('#summary-prs').innerHTML=(prs&&prs.length)
+    ? `<div class="summary-pr"><div class="hd">🏅 ${prs.length>1?'Nouveaux records':'Nouveau record'}</div>${prs.map(p=>`<div class="prow"><span>${esc(p.n)}</span><b>${p.w} kg <span class="muted" style="font-weight:600">(+${R(p.w-p.prev,1)})</span></b></div>`).join('')}</div>`
+    : '';
+  try{if(navigator.vibrate)navigator.vibrate(prs&&prs.length?[90,60,90,60,240]:[110,70,180])}catch(e){}
+  fanfare();
+  openModal('#summary-modal');
+}
+/* variante festive du beep du minuteur : trois notes ascendantes */
+function fanfare(){try{
+  const a=new (window.AudioContext||window.webkitAudioContext)();
+  [523.25,659.25,783.99].forEach((f,i)=>{
+    const o=a.createOscillator(),g=a.createGain(),t0=a.currentTime+i*0.14;
+    o.type='sine';o.frequency.value=f;o.connect(g);g.connect(a.destination);
+    g.gain.setValueAtTime(0.001,t0);g.gain.exponentialRampToValueAtTime(0.26,t0+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001,t0+0.42);
+    o.start(t0);o.stop(t0+0.45);
+  });
+  setTimeout(()=>{try{a.close()}catch(e){}},1400);
+}catch(e){}}
 
 /* rest timer */
 let restInt=null,restEnd=0,restDone=false;
@@ -1628,6 +1768,18 @@ function renderFoodLog(){
   const tt=tot.p*4+tot.c*4+tot.f*9||1;
   $('#log-macrobar').innerHTML=`<i style="width:${tot.p*4/tt*100}%;background:var(--p)"></i><i style="width:${tot.c*4/tt*100}%;background:var(--c)"></i><i style="width:${tot.f*9/tt*100}%;background:var(--f)"></i>`;
   $('#log-macro-pills').innerHTML=`<span class="pill p">P ${R(tot.p)}/${t.protein}g</span> <span class="pill c">G ${R(tot.c)}/${t.carbs}g</span> <span class="pill f">L ${R(tot.f)}/${t.fat}g</span>`;
+  /* « il reste » : le chiffre actionnable au moment d'ajouter un aliment (agent 2).
+     En prise de masse, dépasser les kcal n'est pas une faute — seuls les macros
+     largement dépassés passent en rouge. */
+  const setRemain=(sel,label,val,unit,warnOver)=>{const el=$(sel);if(!el)return;
+    const over=val<0;
+    el.textContent=label+R(over?-val:val)+unit+(over?' de trop':' restant');
+    el.classList.toggle('over',over&&warnOver);
+    el.style.opacity=Math.abs(val)<1?'.6':''};
+  setRemain('#food-remain-kcal','',rem,' kcal',false);
+  setRemain('#food-remain-p','P ',t.protein-tot.p,'g',false);
+  setRemain('#food-remain-c','G ',t.carbs-tot.c,'g',true);
+  setRemain('#food-remain-f','L ',t.fat-tot.f,'g',true);
   renderWater();
   const items=(DB.foodLog[currentFoodDate]||{}).items||[];
   if(!items.length){$('#food-log-list').innerHTML=`<div class="empty"><div class="ico">🍽️</div>Aucun aliment.<br><span class="small">Ajoute tes repas pour suivre ton surplus.</span></div>`;return}
@@ -1657,7 +1809,11 @@ function addToJournal(date,obj){if(!DB.foodLog[date])DB.foodLog[date]={items:[],
 let EDIT={food:null,index:null,qty:0,meal:'bf'}, pendingMeal='bf';
 function openAddFood(meal){pendingMeal=(meal&&meal!=='other')?meal:defaultMeal();openModal('#food-modal');$('#fm-title').textContent='Ajouter un aliment';$('#fm-editor').style.display='none';$('#fm-search').style.display='block';setFmTab('search');$('#food-search').value='';renderRecents();renderFoodSearch('')}
 function setFmTab(t){$$('#fm-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));syncTabs('#fm-tabs');$('#fm-search-pane').style.display=t==='search'?'block':'none';$('#fm-manual-pane').style.display=t==='manual'?'block':'none'}
-function renderRecents(){const r=DB.recentFoods||[];$('#fm-recent').innerHTML=r.length?`<div class="small muted" style="margin:2px 0 6px;font-weight:700">Récents</div><div class="row wrap" style="gap:6px;margin-bottom:12px">${r.slice(0,8).map(f=>`<button class="chip msel" data-recent="${esc(f.n)}">${esc(f.n)}</button>`).join('')}</div>`:''}
+function renderRecents(){const r=DB.recentFoods||[];
+  $('#fm-recent').innerHTML=r.length
+    ? `<div class="between" style="margin:2px 0 7px"><b class="small" style="color:var(--accent2)">⏱ Récents</b><span class="small muted">${r.length} aliment${r.length>1?'s':''}</span></div>
+       <div class="row wrap" style="gap:6px;margin-bottom:13px">${r.slice(0,10).map(f=>`<button class="chip msel" data-recent="${esc(f.n)}">${esc(f.n)}</button>`).join('')}</div>`
+    : `<div class="empty-chart" style="padding:14px 10px 16px"><div class="ico">🥣</div><span class="ec-d">Les aliments que tu ajoutes réapparaîtront ici, en un tap.</span></div>`}
 function renderFoodSearch(q){const list=allFoods().filter(f=>f.n.toLowerCase().includes((q||'').toLowerCase())).slice(0,50);
   $('#food-search-results').innerHTML=list.map(f=>{const d=foodMacros(f,f.def);return `<button type="button" class="qfood tapz" data-food="${esc(f.n)}"><span><b>${esc(f.n)}</b><span class="small" style="display:block">${fmtNum(f.def)} ${esc(f.u==='pc'?'pc':f.u)} · ${macroPills(d.p,d.c,d.f)}</span></span><b class="pill k">${d.k}</b></button>`}).join('')||'<div class="small muted" style="padding:8px">Aucun résultat — crée-le dans l\'onglet « Créer un aliment ».</div>'}
 function pickFoodByName(name){const f=allFoods().find(x=>x.n===name);if(f)openEditor(f,null)}
@@ -1874,7 +2030,7 @@ function renderProgress(){
   $('#prog-advice').style.display=hasCurve?'block':'none';
   if(!hasCurve)$('#weight-empty').innerHTML=wl.length===1
     ? `<div class="ico">✅</div>1<sup>re</sup> pesée enregistrée : <b>${wl[0].w} kg</b> le ${esc(fmtDate(wl[0].date))}<br><span class="small">Il faut deux jours différents pour tracer une courbe. Reviens demain, ou <b>change la date ci-dessous</b> pour saisir une pesée passée.</span>`
-    : `<div class="ico">⚖️</div>Note ton poids ci-dessous pour lancer la courbe.<br><span class="small">Pèse-toi le matin à jeun, 3×/semaine.</span>`;
+    : `<div class="ico">⚖️</div><span class="ec-t">Lance ton suivi de poids</span><span class="ec-d">Deux pesées suffisent à tracer la courbe, trois par semaine à la rendre fiable. Pèse-toi le matin à jeun, toujours dans les mêmes conditions.</span><span class="ec-hint">👇 Saisis ta pesée juste en dessous</span>`;
   if(hasCurve)lineChart($('#weight-chart'),[raw,sm],{dec:1,colors:['#ff6b35','#4c9dff']});
   const trend=weightTrendPerWeek();
   const v=trendVerdict(trend);
@@ -1893,11 +2049,15 @@ function renderProgress(){
     mm.forEach(m=>{const g=muscleGroup(m);mvol[g]=(mvol[g]||0)+v/mm.length})})}});
   const mdata=Object.keys(mvol).filter(m=>mvol[m]>0).map(m=>({l:m,v:mvol[m]})).sort((a,b)=>b.v-a.v).slice(0,8);
   if(mdata.length){$('#muscle-empty').style.display='none';$('#muscle-chart').style.display='block';hBarChart($('#muscle-chart'),mdata);
-    $('#muscle-chart').setAttribute('aria-label','Volume 7 jours par muscle : '+mdata.map(d=>d.l+' '+R(d.v)+' kg').join(', '))}else{$('#muscle-empty').style.display='block';$('#muscle-chart').style.display='none';const c=$('#muscle-chart').getContext('2d');c.clearRect(0,0,$('#muscle-chart').width,$('#muscle-chart').height)}
+    $('#muscle-chart').setAttribute('aria-label','Volume 7 jours par muscle : '+mdata.map(d=>d.l+' '+R(d.v)+' kg').join(', '))}else{$('#muscle-empty').style.display='block';$('#muscle-chart').style.display='none';
+    $('#muscle-empty').innerHTML=`<div class="ico">💪</div><span class="ec-t">Aucune séance ces 7 derniers jours</span><span class="ec-d">Valide une séance et tu verras ici le volume soulevé par groupe musculaire — de quoi repérer ce que tu négliges.</span><span class="ec-hint">→ Onglet Entraînement</span>`;
+    const c=$('#muscle-chart').getContext('2d');c.clearRect(0,0,$('#muscle-chart').width,$('#muscle-chart').height)}
 
   // lifts
   const logged=[];Object.values(DB.workoutLog).forEach(s=>Object.keys(s.exos).forEach(id=>{if(!logged.includes(id)&&!exDef(id).time)logged.push(id)}));
-  if(!logged.length){$('#lift-seg').innerHTML='';$('#lift-empty').style.display='block';$('#lift-chart').style.display='none';$('#lift-stats').textContent='';$('#lift-pr').textContent='';lineChart($('#lift-chart'),[])}
+  if(!logged.length){$('#lift-seg').innerHTML='';$('#lift-empty').style.display='block';$('#lift-chart').style.display='none';$('#lift-stats').textContent='';$('#lift-pr').textContent='';
+    $('#lift-empty').innerHTML=`<div class="ico">🏋️</div><span class="ec-t">Pas encore de données de force</span><span class="ec-d">Enregistre des séances avec charges et répétitions : ton 1RM estimé apparaîtra ici, exercice par exercice.</span><span class="ec-hint">→ Onglet Entraînement</span>`;
+    lineChart($('#lift-chart'),[])}
   else{$('#lift-empty').style.display='none';$('#lift-chart').style.display='block';if(!logged.includes(currentLift))currentLift=logged[0];
     $('#lift-seg').innerHTML=logged.map(id=>`<button class="chip ${id===currentLift?'on':''}" style="white-space:nowrap" data-lift="${esc(id)}" aria-pressed="${id===currentLift}">${esc(exDef(id).n)}</button>`).join('');
     const pts=[];Object.keys(DB.workoutLog).sort().forEach(k=>{const ex=DB.workoutLog[k].exos[currentLift];if(ex){const work=ex.filter(s=>!s.warm);if(!work.length)return;const best=Math.max(...work.map(s=>e1rm(s.w,s.r)));pts.push({v:best,l:fmtDate(k).replace('.','')})}});
@@ -2028,6 +2188,7 @@ $('#save-workout').onclick=saveWorkout;
 $('#rest-skip').onclick=stopRest;$('#rest-m15').onclick=()=>{restEnd=Math.max(Date.now()+1000,restEnd-15000);DB.rest={end:restEnd,label:restLabel};save();updRest()};
 $('#rest-p15').onclick=()=>{restEnd+=15000;restDone=false;DB.rest={end:restEnd,label:restLabel};save();updRest()};
 $('#plate-btn').onclick=()=>{openModal('#plate-modal');renderPlate()};$('#close-plate').onclick=()=>closeModal('#plate-modal');
+$('#summary-close').onclick=()=>{closeModal('#summary-modal');go('home')};
 $('#plate-total').oninput=renderPlate;$('#plate-bar').oninput=renderPlate;
 
 function setFoodTab(f){
