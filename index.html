@@ -243,6 +243,21 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(25
 @media(hover:hover){.stepper-wrap .step-btn:hover{background:var(--card3);color:var(--txt)}}
 .setrow.is-warm .stepper-wrap .step-btn{border-color:rgba(255,176,32,.45)}
 @media(min-width:520px){.stepper-wrap .step-btn{flex-basis:34px;width:34px}}
+/* Sur téléphone, cinq colonnes ne laissaient que 17 px de saisie à 320 px et
+   des boutons trop étroits. La ligne passe sur deux rangs : charge au-dessus
+   des reps, boutons à 44 px, champ large. Un seul exercice étant ouvert à la
+   fois, la hauteur gagnée ne coûte quasiment pas de défilement. */
+@media(max-width:479px){
+  .setrow{grid-template-columns:26px 1fr 44px;column-gap:6px;row-gap:5px;margin-bottom:10px}
+  .setrow>*:nth-child(1){grid-column:1;grid-row:1/3;align-self:center}
+  .setrow>*:nth-child(2){grid-column:2;grid-row:1}
+  .setrow>*:nth-child(3){grid-column:2;grid-row:2}
+  .setrow>*:nth-child(4){grid-column:3;grid-row:1}
+  .setrow>*:nth-child(5){grid-column:3;grid-row:2}
+  .setrow[data-exo]{padding-bottom:9px;border-bottom:1px solid var(--line2)}
+  .stepper-wrap .step-btn{flex-basis:44px;width:44px;font-size:19px}
+  .stepper-wrap input{font-size:15px;letter-spacing:normal}
+}
 .setrow .sn{text-align:center;font-weight:750;color:var(--muted);font-size:13px;position:relative}
 .setrow button.sn{cursor:pointer;border-radius:8px;min-height:44px;transition:.2s var(--spring)}
 .setrow button.sn:active{transform:scale(.9)}
