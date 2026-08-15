@@ -978,10 +978,12 @@ const EX={
     setup:"Haut du dos calé contre un banc, barre sur le pli des hanches (avec protection). Pieds à plat, tibias verticaux en haut du mouvement.",
     exec:"Pousse dans les talons, monte les hanches jusqu'à alignement épaules-hanches-genoux, contracte les fessiers 1s. Redescends contrôlé.",
     err:"Hyperextension lombaire, menton en l'air, amplitude partielle.",alt:"Hip thrust une jambe, pont fessier"},
-  fentes:{n:"Fentes haltères",role:'L',rep:[10,12],rest:90,tempo:"2-0-1",m:["Quadriceps","Fessiers"],cue:"Grand pas, genou arrière vers le sol.",
+  /* clé distincte de `fentes` (fentes marchées, bloc morpho) : les deux ont
+     longtemps partagé le même id et celle-ci était écrasée en silence. */
+  fenteshalt:{n:"Fentes haltères",role:'L',rep:[10,12],rest:90,tempo:"2-0-1",m:["Quadriceps","Fessiers"],cue:"Grand pas, genou arrière vers le sol.",
     setup:"Haltères le long du corps, buste droit, gainé.",
     exec:"Grand pas en avant (ou arrière), descends le genou arrière vers le sol, genou avant dans l'axe. Pousse pour revenir.",
-    err:"Pas trop court, buste penché, genou avant qui dépasse loin devant le pied.",alt:"Fentes bulgares, presse, split squat"},
+    err:"Pas trop court, buste penché, genou avant qui dépasse loin devant le pied.",alt:"Split squat (sans avancer), montées sur banc, squat bulgare, presse à cuisses"},
   mollets:{n:"Mollets debout",role:'I',rep:[12,15],rest:60,tempo:"2-1-2",m:["Mollets"],cue:"Amplitude max, pause 1s en haut.",
     setup:"Pointes de pieds sur une marche/cale, talons dans le vide, charge tenue.",
     exec:"Monte le plus haut possible sur les pointes, pause 1s, descends lentement en étirant à fond.",
@@ -1073,7 +1075,21 @@ const EX={
     cue:"Grand pas, genou arrière vers le sol, buste droit.",
     setup:"Haltères le long du corps, buste droit, regard loin devant.",
     exec:"Fais un grand pas, descends le genou arrière près du sol, puis pousse dans le talon avant pour enchaîner le pas suivant. Compte une rep par jambe.",
-    err:"Pas trop court (genou qui dépasse loin le pied), buste penché, descente non contrôlée.",alt:"Squat bulgare, fentes statiques, presse à cuisses"},
+    err:"Pas trop court (genou qui dépasse loin le pied), buste penché, descente non contrôlée.",alt:"Split squat (sur place), montées sur banc, squat bulgare, presse à cuisses"},
+  /* Replis quand la salle ne suit pas : les fentes marchées demandent un couloir
+     libre. Ces trois-là tiennent dans 1 m², sur un banc ou sur une machine. */
+  splitsquat:{n:"Split squat haltères",role:'L',rep:[8,10],rest:90,tempo:"3-1-1",m:["Quadriceps","Fessiers"],
+    morpho:{seg:'femurs',val:'long',lvl:'good',txt:"Fémurs longs : un seul fémur travaille à la fois et le buste reste droit — le bénéfice de la fente, sans avoir besoin d'avancer."},
+    cue:"Pieds figés en fente, descends à la verticale, tout sur la jambe avant.",
+    setup:"Un pied devant, un pied derrière, écart d'un grand pas, les deux pointes vers l'avant. Haltères le long du corps. Tu ne déplaces plus les pieds de toute la série.",
+    exec:"Descends le genou arrière vers le sol à la verticale, jusqu'à cuisse avant parallèle. Remonte en poussant dans le talon avant. Termine toutes les reps avant de changer de jambe.",
+    err:"Écart trop court, poids qui bascule sur la jambe arrière, buste penché en avant.",alt:"Squat bulgare, fentes marchées, presse à cuisses unilatérale"},
+  stepup:{n:"Montées sur banc",role:'L',rep:[10,12],rest:90,tempo:"2-0-1",m:["Quadriceps","Fessiers"],
+    morpho:{seg:'femurs',val:'long',lvl:'good',txt:"Fémurs longs : la hauteur du banc se règle au centimètre — tu choisis l'amplitude que ta jambe encaisse au lieu de la subir."},
+    cue:"Tout le poids sur la jambe du dessus, la jambe au sol ne pousse pas.",
+    setup:"Face à un banc ou une caisse arrivant à mi-cuisse (baisse la hauteur si le genou part trop loin devant). Haltères le long du corps.",
+    exec:"Pose un pied entier sur le banc et monte en poussant uniquement dans ce talon. Redescends lentement en contrôlant. Termine toutes les reps avant de changer de jambe.",
+    err:"Prendre une impulsion avec la jambe restée au sol, banc trop haut, descente en chute libre.",alt:"Squat bulgare, split squat, fentes marchées"},
   legcurl:{n:"Leg curl allongé",role:'I',rep:[10,12],rest:75,tempo:"2-1-3",m:["Ischios"],
     cue:"Bassin plaqué, contrôle la descente, ne décolle pas les hanches.",
     setup:"Allongé sur la machine, rouleau juste au-dessus des talons, bassin bien plaqué sur le banc.",
@@ -1132,7 +1148,7 @@ const SESSIONS={
      exos:["presse","bulgare","floorpress","ecarte","rowhalt","mollets","crunch"]},
   E:{name:"Séance E — Chaîne postérieure & tirage",tip:"Le roumain et le leg curl couvrent les deux fonctions des ischios. Prise neutre au tirage pour épargner l'épaule.",
      exos:["rdl","legcurl","tiragenut","rowbarre","oiseau","curlincline","gainage"]},
-  F:{name:"Séance F — Volume & finition",tip:"Buste vertical au squat avant, unilatéral aux fentes, puis étirement sur les bras et les mollets.",
+  F:{name:"Séance F — Volume & finition",tip:"Buste vertical au squat avant, unilatéral aux fentes, puis étirement sur les bras et les mollets. Pas la place de marcher en salle ? Échange les fentes contre le split squat ou les montées sur banc.",
      exos:["frontsquat","fentes","dcinc","elevlat","tricepsnuque","molletsassis","crunch"]}
 };
 /* Deux blocs de trois séances : on en suit un à la fois. Six séances dans la
