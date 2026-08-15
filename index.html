@@ -1028,6 +1028,10 @@ const EX={
     setup:"Debout, haltères le long du corps, léger buste en avant, coudes légèrement fléchis.",
     exec:"Monte les haltères sur les côtés jusqu'à l'horizontale (coudes menant), descends lentement.",
     err:"Prendre trop lourd et balancer, monter au-dessus de l'horizontale, hausser les épaules.",alt:"Élévations à la poulie, oiseau"},
+  oiseau:{n:"Oiseau haltères",role:'I',rep:[12,15],rest:60,tempo:"2-1-2",m:["Épaules (deltoïde postérieur)","Trapèzes"],cue:"Buste penché, coudes qui mènent, léger et propre.",
+    setup:"Buste penché à ~45° (ou poitrine calée sur un banc incliné), haltères sous les épaules, coudes légèrement fléchis et fixes.",
+    exec:"Écarte les bras sur les côtés en menant avec les coudes jusqu'à l'horizontale, serre les omoplates 1s, puis redescends lentement.",
+    err:"Prendre trop lourd et tirer avec le dos, se redresser à chaque rep, coudes qui se plient (ça devient un rowing).",alt:"Oiseau à la poulie vis-à-vis, pec-deck inversé, face pull"},
   curl:{n:"Curl biceps",role:'I',rep:[10,12],rest:60,tempo:"2-1-2",m:["Biceps"],cue:"Contrôle la descente 2s, coudes fixes.",
     setup:"Debout, haltères ou barre EZ, coudes collés au corps.",
     exec:"Fléchis les coudes en gardant les bras immobiles, contracte en haut, descends lentement bras tendus.",
@@ -1109,21 +1113,27 @@ const EX={
     exec:"Descends les talons jusqu'à l'étirement complet, marque 2 secondes, puis monte sur la pointe et marque la contraction.",
     err:"Rebondir, amplitude écourtée, aller trop vite.",alt:"Mollets debout, presse à mollets, mollets un pied"}
 };
+/* Deux règles tenues dans les six séances :
+   - jamais soulevé de terre et roumain le même jour (deux fois la même
+     chaîne postérieure à lourde charge, le bas du dos ne suit pas) ;
+   - chaque séance finit par un abdo, gainage et relevé de jambes en
+     alternance d'une séance à l'autre. */
 const SESSIONS={
   A:{name:"Séance A — Pousser dominant",tip:"Priorité squat + développé couché. Charge progressivement selon les reco vertes.",
-     exos:["squat","dc","rowbarre","dvepaules","triceps","gainage"]},
-  B:{name:"Séance B — Tirer & postérieur",tip:"Le soulevé de terre est le roi de la masse. Lourd mais dos plat.",
-     exos:["sdt","dcinc","traction","rdl","elevlat","curl"]},
-  C:{name:"Séance C — Volume & bras",tip:"Un peu plus léger, plus de volume. Focus connexion muscle-esprit.",
-     exos:["frontsquat","dchalt","rowhalt","dips","marteau","mollets"]},
+     exos:["squat","dc","rowbarre","dvepaules","triceps","mollets","gainage"]},
+  B:{name:"Séance B — Tirer & postérieur",tip:"Le soulevé de terre est le roi de la masse. Lourd mais dos plat — c'est le seul mouvement de hanche du jour.",
+     exos:["sdt","dcinc","traction","elevlat","oiseau","curl","crunch"]},
+  C:{name:"Séance C — Volume & bras",tip:"Un peu plus léger, plus de volume. Le roumain est ici et pas avec le soulevé de terre : deux jours différents pour les ischios.",
+     exos:["frontsquat","rdl","dchalt","rowhalt","dips","marteau","gainage"]},
   /* Bloc morpho : mêmes principes, exercices choisis pour segments longs.
-     Les jambes y sont doublées — c'était le trou du bloc Fondation. */
+     Les jambes y sont doublées — c'était le trou du bloc Fondation.
+     Pas de soulevé de terre ici : le roumain reste seul, en séance E. */
   D:{name:"Séance D — Quadriceps & poussée",tip:"Presse et fentes plutôt que squat barre : avec des fémurs longs, tu charges les cuisses au lieu du bas du dos.",
-     exos:["presse","bulgare","floorpress","ecarte","rowhalt","mollets"]},
+     exos:["presse","bulgare","floorpress","ecarte","rowhalt","mollets","crunch"]},
   E:{name:"Séance E — Chaîne postérieure & tirage",tip:"Le roumain et le leg curl couvrent les deux fonctions des ischios. Prise neutre au tirage pour épargner l'épaule.",
-     exos:["rdl","legcurl","tiragenut","rowbarre","curlincline","gainage"]},
+     exos:["rdl","legcurl","tiragenut","rowbarre","oiseau","curlincline","gainage"]},
   F:{name:"Séance F — Volume & finition",tip:"Buste vertical au squat avant, unilatéral aux fentes, puis étirement sur les bras et les mollets.",
-     exos:["frontsquat","fentes","dcinc","elevlat","tricepsnuque","molletsassis"]}
+     exos:["frontsquat","fentes","dcinc","elevlat","tricepsnuque","molletsassis","crunch"]}
 };
 /* Deux blocs de trois séances : on en suit un à la fois. Six séances dans la
    même semaine n'aurait aucun sens pour une morphologie qui récupère mal. */
