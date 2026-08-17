@@ -471,10 +471,34 @@ suite('Séance', () => {
     const lignes = all('#exo-list .exo').length;
     ok(lignes > 0, 'aucun exercice affiché');
     eq(all('#exo-list .exo .top > .exo-fig').length, lignes, 'vignette manquante sur une ligne');
-    eq(all('#exo-list .exo.open .exo-hero .exo-fig').length, 1, 'illustration absente de la fiche ouverte');
+    eq(all('#exo-list .exo.open .exo-hero .exo-pair').length, 1, 'illustration absente de la fiche ouverte');
     /* décoratives : le nom de l'exercice est déjà lu à côté */
-    ok(all('#exo-list .exo-fig > svg').every(s => s.getAttribute('aria-hidden') === 'true'),
+    ok(all('#exo-list svg.exo-art').every(s => s.getAttribute('aria-hidden') === 'true'),
        'illustration exposée aux lecteurs d\'écran');
+  });
+
+  test('la fiche montre les deux temps du mouvement', async () => {
+    ev("go('train');selectSession('A')"); await wait(150);
+    const paire = $$('#exo-list .exo.open .exo-pair');
+    ok(paire, 'panneau des deux temps absent');
+    const lgd = all('#exo-list .exo.open .exo-pair figcaption').map(f => f.textContent);
+    eq(lgd.join(' → '), 'Départ → Fin', 'légendes des deux temps inattendues');
+    /* le squat commence debout : la position basse est la seconde, pas la première */
+    const bas = ev("ART.squat"), haut = ev("ART2.squat");
+    eq(ev("exoDepart('squat')"), haut, 'le squat démarrerait en position basse');
+    eq(ev("exoFin('squat')"), bas, 'la fin du squat n\'est pas la position basse');
+    /* le soulevé de terre part du sol : lui n'est pas inversé */
+    eq(ev("exoDepart('sdt')"), ev("ART.sdt"), 'le soulevé de terre ne démarre pas au sol');
+    /* chaque exercice a sa seconde position, sauf les isométriques */
+    const sans = ev("Object.keys(EX).filter(function(k){return !ART2[k]})");
+    eq(sans.join(','), 'gainage', 'seconde position manquante : ' + sans.join(', '));
+  });
+
+  test('un isométrique n\'invente pas de seconde position', async () => {
+    const html = ev("exoDeuxTemps('gainage')");
+    eq((html.match(/<figure/g) || []).length, 1, 'le gainage affiche deux temps');
+    match(html, /Position à tenir/, 'légende de l\'isométrique absente');
+    ok(!html.includes('exo-arrow'), 'flèche de mouvement sur un isométrique');
   });
 
   test('la photo manquante laisse la silhouette en place', async () => {

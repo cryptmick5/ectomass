@@ -21,7 +21,9 @@ machines (presse, leg curl, poulies) : il produit une pose de salle plausible
 mais fausse. Sur une app de technique, une image fausse est pire que pas d'image.
 
 **Supprime toute image qui ne montre pas exactement le mouvement décrit** dans la
-fiche : l'app repassera d'elle-même sur la silhouette, qui est juste.
+fiche. Ça ne coûte rien : l'app repasse alors sur l'illustration vectorielle en
+deux temps (départ → fin), qui est juste et qui montre le mouvement — là où la
+photo ne montre qu'un instant. Aucune photo n'est meilleure qu'une photo fausse.
 
 Pour retenter un exercice précis (nouvelle graine à chaque essai) :
 

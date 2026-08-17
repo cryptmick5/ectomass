@@ -232,9 +232,18 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(25
 .exo-fig>.exo-art,.exo-fig>.exo-photo{position:absolute;inset:0;width:100%;height:100%;display:block}
 .exo-fig>.exo-photo{object-fit:cover;background:var(--card3)}
 .exo.open .exo-fig{border-color:rgba(255,107,53,.34)}
-.exo-hero{display:flex;align-items:center;gap:11px;margin-bottom:9px}
-.exo-hero .exo-fig{width:88px;height:88px;border-radius:13px}
-.exo-hero .cue{font-size:13px;color:var(--muted);line-height:1.45}
+.exo-hero{margin-bottom:9px}
+.exo-hero .cue{font-size:13px;color:var(--muted);line-height:1.45;margin-top:8px}
+/* les deux temps du mouvement, côte à côte */
+.exo-pair{position:relative;display:flex;align-items:center;gap:6px;padding:9px 10px;
+  background:var(--card2);border:1px solid var(--line2);border-radius:13px;overflow:hidden}
+.exo-pair figure{flex:1;margin:0;min-width:0;text-align:center}
+.exo-pair figure .exo-art{width:100%;height:92px;display:block;background:var(--card3);border-radius:10px}
+.exo-pair figcaption{margin-top:5px;font-size:11px;font-weight:750;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--muted2)}
+.exo-pair .exo-arrow{flex-shrink:0;color:var(--accent);font-size:17px;line-height:1;
+  align-self:center;margin-bottom:16px}
+.exo-pair .exo-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .qfood .exo-fig{width:38px;height:38px;margin-right:10px}
 .af-b,.af-f{fill:none;stroke:var(--accent);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
 .af-f{opacity:.4}
@@ -1314,6 +1323,157 @@ const ART=(()=>{
       +head(31,14)+db(27,37)
   };
 })();
+/* Seconde position (fin du mouvement). Même repère, mêmes conventions que ART.
+   Le gainage n'y figure pas : c'est un isométrique, il n'a pas de « fin ». */
+const ART2=(()=>{
+  const line=(...p)=>p.slice(1).map((q,i)=>`M${p[i][0]} ${p[i][1]}L${q[0]} ${q[1]}`).join('');
+  const body=(...p)=>`<path class="af-b" d="${line(...p)}"/>`;
+  const far=(...p)=>`<path class="af-f" d="${line(...p)}"/>`;
+  const head=(x,y)=>`<circle class="af-h" cx="${x}" cy="${y}" r="4"/>`;
+  const pad=(...p)=>`<path class="af-m" d="${line(...p)}"/>`;
+  const frame=(...p)=>`<path class="af-s" d="${line(...p)}"/>`;
+  const bar=(...p)=>`<path class="af-e" d="${line(...p)}"/>`;
+  const disc=(x,y,h)=>`<rect class="af-p" x="${x-1.7}" y="${y-h/2}" width="3.4" height="${h}" rx="1.4"/>`;
+  const barbell=(x1,x2,y,h)=>bar([x1,y],[x2,y])+disc(x1+2.6,y,h)+disc(x2-2.6,y,h);
+  const db=(x,y)=>bar([x-3.2,y],[x+3.2,y])+disc(x-3.2,y,8)+disc(x+3.2,y,8);
+  const dbv=(x,y)=>bar([x,y-3.2],[x,y+3.2])
+    +`<rect class="af-p" x="${x-4}" y="${y-4.9}" width="8" height="3.4" rx="1.4"/>`
+    +`<rect class="af-p" x="${x-4}" y="${y+1.5}" width="8" height="3.4" rx="1.4"/>`;
+  const box=(x,y,w,h)=>`<rect class="af-box" x="${x}" y="${y}" width="${w}" height="${h}" rx="2.5"/>`;
+  const wheel=(x,y,r)=>`<circle class="af-box" cx="${x}" cy="${y}" r="${r}"/>`;
+  const floor='<path class="af-x" d="M5 58h54"/>';
+  const bench=(x1,x2,y)=>pad([x1,y],[x2,y])+frame([x1+4,y+1],[x1+4,57])+frame([x2-4,y+1],[x2-4,57]);
+  /* haut de la fente : jambes tendues, écart conservé */
+  const lungeTop=floor+far([28,32],[22,45],[19,56])
+    +body([28,18],[28,32],[36,45],[37,56])
+    +far([28,18],[31,25],[32,32])
+    +body([28,18],[25,25],[23,31])+head(29,10)+db(21,33);
+
+  return {
+    squat:floor+far([31,35],[29,46],[28,57])
+      +body([31,21],[31,35],[32,46],[32,57])+body([31,21],[27,26],[28,21])
+      +head(32,14)+barbell(17,45,21,15),
+    frontsquat:floor+far([30,35],[28,46],[27,57])
+      +body([30,21],[30,35],[31,46],[31,57])+body([30,21],[33,26],[35,25])
+      +head(31,13)+dbv(38,25),
+    sdt:floor+far([30,33],[29,45],[28,57])
+      +body([31,20],[30,33],[31,45],[30,57])+body([31,20],[33,28],[34,36])
+      +head(31,13)+barbell(20,52,37,16),
+    rdl:floor+far([30,33],[29,45],[28,57])
+      +body([31,20],[30,33],[31,45],[30,57])+body([31,20],[33,28],[34,37])
+      +head(31,13)+barbell(21,49,38,13),
+    hipthrust:floor+bench(6,26,36)
+      +far([30,45],[40,45],[42,56])
+      +body([18,33],[30,45],[41,45],[43,56])+body([18,33],[23,35],[28,38])
+      +head(13,30)+barbell(20,46,40,15),
+    presse:floor+pad([8,54],[22,34])+frame([12,55],[12,57])
+      +far([14,49],[34,39],[46,27])
+      +body([19,39],[14,49],[36,36],[48,24])+body([19,39],[22,45],[26,49])
+      +head(23,33)+pad([44,17],[54,29])+disc(57,23,12),
+    fentes:lungeTop+frame([44,53],[54,53],[51,50])+frame([54,53],[51,56]),
+    fenteshalt:lungeTop,
+    splitsquat:lungeTop+'<path class="af-lock" d="M15 58h9M33 58h9"/>',
+    bulgare:floor+bench(6,24,44)
+      +far([34,30],[28,44],[21,43])
+      +body([34,16],[34,30],[42,44],[43,57])+far([34,16],[31,23],[30,29])
+      +body([34,16],[37,22],[38,28])+head(35,9)+db(40,30),
+    stepup:floor+box(36,42,22,16)
+      +far([43,28],[40,36],[38,42])
+      +body([43,15],[43,28],[45,35],[45,42])+far([43,15],[46,22],[47,28])
+      +body([43,15],[40,22],[39,28])+head(44,8)+db(37,30),
+    legcurl:floor+bench(10,44,40)
+      +far([44,37],[52,36])
+      +body([19,37],[34,37],[44,37],[53,37])+body([19,37],[15,42],[11,45])
+      +head(12,33)+wheel(54,37,4)+bar([8,45],[15,45]),
+    mollets:floor+box(26,52,18,6)
+      +body([32,22],[32,35],[32,45],[33,52])+body([33,52],[39,52])+body([33,52],[28,56])
+      +far([32,22],[35,29],[36,36])+body([32,22],[30,29],[29,36])
+      +head(32,15)+db(28,38),
+    molletsassis:floor+pad([8,48],[26,48])+frame([12,49],[12,57])+box(34,52,12,6)
+      +body([16,32],[16,46],[32,46],[34,52])+body([34,52],[40,52])+body([34,52],[32,57])
+      +body([16,32],[20,38],[26,40])+head(17,25)+box(22,38,14,5),
+
+    dc:floor+bench(12,50,38)
+      +body([26,34],[40,34],[48,42],[50,56])+far([26,34],[31,30],[29,27])
+      +body([26,34],[21,30],[26,27])+head(19,33)+barbell(13,41,26,14),
+    dchalt:floor+bench(12,50,38)
+      +body([26,34],[40,34],[48,42],[50,56])+far([26,34],[31,30],[30,26])
+      +body([26,34],[21,30],[24,26])+head(19,33)+db(25,25),
+    dcinc:floor+pad([18,53],[40,26])+frame([22,52],[22,57])
+      +body([34,32],[25,45],[17,51],[12,57])+far([34,32],[37,28],[38,24])
+      +body([34,32],[31,27],[34,24])+head(39,27)+db(34,23),
+    floorpress:floor
+      +body([23,50],[36,52],[45,44],[51,56])+far([23,50],[20,54],[26,49])
+      +body([23,50],[19,55],[25,48])+head(17,47)+db(26,47),
+    ohp:floor+body([30,28],[30,40],[30,49],[31,57])
+      +far([30,28],[35,31],[33,26])+body([30,28],[25,31],[27,26])
+      +head(31,19)+barbell(15,47,26,12),
+    dvepaules:floor+pad([22,52],[38,52])+pad([22,52],[21,30])+frame([26,53],[26,57])
+      +body([26,35],[26,50],[38,50],[39,57])+far([26,35],[31,34],[30,30])
+      +body([26,35],[21,34],[24,30])+head(28,28)+db(24,29),
+    dips:floor+frame([12,31],[12,57])+frame([52,31],[52,57])
+      +far([32,22],[38,26],[40,30])
+      +body([32,22],[32,36],[37,45],[32,51])+body([32,22],[26,26],[24,30])
+      +head(33,15)+bar([8,30],[26,30])+bar([38,30],[56,30]),
+    ecarte:floor+bench(14,50,40)
+      +body([26,36],[40,36],[48,44],[50,56])+far([26,36],[28,29],[29,23])
+      +body([26,36],[24,29],[24,23])+head(18,36)+db(23,21)+db(30,21),
+    triceps:floor+frame([14,8],[14,57])+wheel(14,10,3)+frame([14,13],[24,26])
+      +body([34,22],[34,35],[34,46],[33,57])+far([34,22],[33,30],[28,27])
+      +body([34,22],[32,30],[27,26])+head(36,15)+bar([22,26],[31,26]),
+    tricepsnuque:floor+body([29,29],[30,40],[30,49],[31,57])
+      +far([29,29],[32,20],[28,12])+body([29,29],[33,19],[27,10])
+      +head(27,23)+dbv(24,9),
+
+    traction:frame([12,15],[12,5])+frame([52,15],[52,5])+bar([10,15],[54,15])
+      +far([32,26],[38,21],[38,16])+far([32,40],[36,50],[32,56])
+      +body([32,26],[32,40],[35,50],[31,56])+body([32,26],[26,21],[26,16])
+      +head(32,21),
+    tiragenut:floor+pad([14,46],[32,46])+frame([18,47],[18,57])
+      +pad([28,40],[38,40])+frame([33,41],[33,45])
+      +wheel(37,7,3)+frame([37,10],[37,25])
+      +body([24,31],[22,44],[34,45],[36,56])+far([24,31],[29,30],[33,27])
+      +body([24,31],[28,29],[32,26])+head(20,25)+bar([29,25],[41,25]),
+    rowbarre:floor+far([22,32],[20,44],[19,56])
+      +body([36,26],[22,32],[21,44],[20,56])+body([36,26],[35,36],[34,45])
+      +head(42,23)+barbell(21,47,46,12),
+    rowhalt:floor+bench(4,24,42)
+      +far([28,32],[21,41],[13,41])+far([13,29],[16,36],[18,41])
+      +body([13,29],[28,32],[30,45],[31,57])+body([13,29],[13,40],[13,49])
+      +head(8,26)+db(13,51),
+    oiseau:floor+far([22,34],[20,45],[19,56])
+      +body([36,30],[22,34],[21,45],[20,56])+far([36,30],[38,36],[39,42])
+      +body([36,30],[33,36],[31,42])+head(42,28)+db(30,44)+db(40,44),
+    elevlat:floor+far([32,36],[36,47],[37,57])
+      +body([32,19],[32,36],[28,47],[27,57])
+      +body([32,20],[28,28],[26,35])+body([32,20],[36,28],[38,35])
+      +head(32,12)+db(25,37)+db(39,37),
+    curl:floor+body([30,20],[30,34],[30,46],[31,57])
+      +far([30,20],[27,28],[26,35])+body([30,20],[31,28],[32,36])
+      +head(30,13)+db(33,38),
+    marteau:floor+body([30,20],[30,34],[30,46],[31,57])
+      +far([30,20],[27,28],[26,35])+body([30,20],[31,28],[32,36])
+      +head(30,13)+dbv(33,38),
+    curlincline:floor+pad([18,53],[40,26])+frame([22,52],[22,57])
+      +body([33,32],[24,45],[16,51],[11,57])+far([33,32],[34,39],[29,35])
+      +body([33,32],[35,39],[30,34])+head(38,27)+db(28,33),
+
+    crunch:floor+far([35,53],[44,46],[49,55])
+      +body([21,52],[35,53],[45,45],[50,56])+body([21,52],[20,46],[16,43])
+      +head(16,49)
+  };
+})();
+/* ART tient la position la plus identifiable de chaque exercice — c'est
+   rarement celle du départ. Ces exercices-là commencent donc par ART2 : on
+   part debout pour un squat, bras tendus pour un curl, suspendu pour une
+   traction. Les autres (soulevé de terre au sol, développé bras tendus,
+   tirage bras tendus…) ont déjà ART en position de départ. */
+const ART_INV=new Set(['squat','frontsquat','rdl','hipthrust','presse','fentes','fenteshalt',
+  'splitsquat','bulgare','legcurl','mollets','molletsassis','ohp','dvepaules','dips','ecarte',
+  'triceps','tricepsnuque','traction','rowbarre','rowhalt','oiseau','elevlat','curl','marteau','crunch']);
+const exoDepart=(id)=>ART_INV.has(id)&&ART2[id]?ART2[id]:ART[id];
+const exoFin=(id)=>ART_INV.has(id)&&ART2[id]?ART[id]:ART2[id];
+
 /* Un exercice créé par l'utilisateur retombe sur la silhouette générique. */
 function exoArt(id){
   return `<svg class="exo-art" viewBox="0 0 64 64" aria-hidden="true" focusable="false">${ART[id]||ART._}</svg>`;
@@ -1324,9 +1484,24 @@ function exoArt(id){
    l'image s'efface d'elle-même et le dessin reste. Aucun visuel cassé, et
    l'app fonctionne à l'identique sans un seul fichier photo.
    Un exercice créé à la main n'aura jamais de photo : on ne tente même pas. */
+function exoPhoto(id){
+  return ART[id]?`<img class="exo-photo" src="exercices/${encodeURIComponent(id)}.webp" alt="" loading="lazy" decoding="async" onerror="this.remove()">`:'';
+}
 function exoVisuel(id){
-  const photo=ART[id]?`<img class="exo-photo" src="exercices/${encodeURIComponent(id)}.webp" alt="" loading="lazy" decoding="async" onerror="this.remove()">`:'';
-  return `<span class="exo-fig">${exoArt(id)}${photo}</span>`;
+  return `<span class="exo-fig">${exoArt(id)}${exoPhoto(id)}</span>`;
+}
+/* Grande illustration de la fiche : les deux temps du mouvement côte à côte.
+   C'est ce que la photo ne montre pas — une image fixe ne dit pas où l'on va.
+   La photo, quand elle existe, se pose par-dessus l'ensemble ; sinon les deux
+   dessins restent. Un isométrique (gainage) n'a pas de « fin » : une seule
+   vignette, et on annonce la position à tenir. */
+function exoDeuxTemps(id){
+  const cadre=(svg,lbl)=>`<figure><svg class="exo-art" viewBox="0 0 64 64" aria-hidden="true" focusable="false">${svg}</svg><figcaption>${lbl}</figcaption></figure>`;
+  const fin=exoFin(id);
+  const corps=fin
+    ? cadre(exoDepart(id),'Départ')+'<span class="exo-arrow" aria-hidden="true">➜</span>'+cadre(fin,'Fin')
+    : cadre(ART[id]||ART._,'Position à tenir');
+  return `<div class="exo-pair">${corps}${exoPhoto(id)}</div>`;
 }
 
 /* Deux règles tenues dans les six séances :
@@ -1856,7 +2031,7 @@ function renderExos(){
           <span class="tag">😮‍💨 Repos ${e.rest}s</span>
           ${e.warm?'<span class="tag" style="color:var(--amber)">🔥 Échauffe-toi</span>':''}
         </div>
-        <div class="exo-hero">${exoVisuel(id)}<div class="cue">💬 ${esc(e.cue)}</div></div>
+        <div class="exo-hero">${exoDeuxTemps(id)}<div class="cue">💬 ${esc(e.cue)}</div></div>
         ${e.warm?`<div class="warmnote">🔥 <b>Échauffement</b> : 2-3 séries progressives. Appuie sur le n° de série pour la marquer « W » (exclue des PR/volume).</div>`:''}
         ${(()=>{const mn=morphoNote(id);return mn?`<div class="morphonote ${mn.lvl}">${mn.lvl==='good'?'🧬 <b>Adapté à ta morphologie</b>':'🧬 <b>Attention à ta morphologie</b>'} — ${esc(mn.txt)}</div>`:''})()}
         ${recoTxt}
