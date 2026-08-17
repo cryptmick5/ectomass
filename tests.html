@@ -457,6 +457,25 @@ suite('Séance', () => {
     ev("go('prog')"); await wait(80);
     ok(all('#workout-history .hist-note').length > 0, 'note absente de l\'historique');
   });
+
+  test('chaque exercice de la bibliothèque a son illustration', () => {
+    const sans = ev("Object.keys(EX).filter(function(k){return !ART[k]})");
+    eq(sans.length, 0, 'exercices sans dessin : ' + sans.join(', '));
+    /* un exercice créé par l'utilisateur n'a pas de dessin dédié : il doit
+       retomber sur la silhouette générique, jamais sur du vide. */
+    ok(ev("exoArt('cx_inconnu').indexOf('<path') > -1"), 'pas de silhouette de repli');
+  });
+
+  test('les vignettes accompagnent les exercices de la séance', async () => {
+    ev("go('train')"); await wait(120);
+    const lignes = all('#exo-list .exo').length;
+    ok(lignes > 0, 'aucun exercice affiché');
+    eq(all('#exo-list .exo .top > svg.exo-fig').length, lignes, 'vignette manquante sur une ligne');
+    eq(all('#exo-list .exo.open .exo-hero svg.exo-fig').length, 1, 'illustration absente de la fiche ouverte');
+    /* décoratives : le nom de l'exercice est déjà lu à côté */
+    ok(all('#exo-list svg.exo-fig').every(s => s.getAttribute('aria-hidden') === 'true'),
+       'illustration exposée aux lecteurs d\'écran');
+  });
 });
 
 /* ============================================================

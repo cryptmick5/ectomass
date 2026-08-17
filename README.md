@@ -4,7 +4,7 @@ Application web PWA (installable, hors-ligne) pour la prise de masse en musculat
 
 ## Fonctionnalités
 - **Profil & calories** : calcul Mifflin-St Jeor → TDEE → surplus, macros (protéines 2 g/kg), onboarding au 1er lancement.
-- **Entraînement** : mésocycle 12 semaines full-body 3×/sem, surcharge progressive adaptative, timer de repos, séries d'échauffement, PR & 1RM estimé, volume par muscle, composition de séance personnalisable (échange/ajout/création d'exercices), calculateur de disques.
+- **Entraînement** : mésocycle 12 semaines full-body 3×/sem, surcharge progressive adaptative, timer de repos, séries d'échauffement, PR & 1RM estimé, volume par muscle, composition de séance personnalisable (échange/ajout/création d'exercices), calculateur de disques, **illustration de chaque exercice** (silhouettes SVG dessinées dans le fichier, donc hors-ligne et sans licence à suivre).
 - **Nutrition** : journal groupé par repas avec portions au gramme éditables, base d'aliments + aliments perso/récents, générateur de menus jour ET semaine (cohérents), liste de courses éditable et copiable, suivi hydratation.
 - **Progression** : courbe de poids avec tendance lissée, graphes 1RM/volume, historique, notes de séance et RIR ressenti.
 - **Sauvegarde & synchro** : export/import JSON + synchronisation multi-appareils via un gist GitHub privé (voir ci-dessous).
@@ -40,7 +40,7 @@ Sur mobile : ouvrir cette URL → menu du navigateur → « Ajouter à l'écran 
 
 ## Tests
 
-`tests.html` charge l'application dans une iframe et rejoue 58 assertions : socle de données,
+`tests.html` charge l'application dans une iframe et rejoue 60 assertions : socle de données,
 fusion multi-appareils, échappement des contenus saisis, suivi de poids, cohérence des chiffres
 affichés, libellés, séance, dialogues, accessibilité, nutrition, profil.
 
