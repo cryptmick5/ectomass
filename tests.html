@@ -466,6 +466,21 @@ suite('Séance', () => {
     ok(ev("exoArt('cx_inconnu').indexOf('<path') > -1"), 'pas de silhouette de repli');
   });
 
+  /* Un dessin amputé (bonhomme sans tête, membre oublié) reste du SVG valide et
+     passe donc inaperçu : on vérifie que chaque silhouette a bien sa tête et
+     assez de traits de corps pour être un bonhomme, et qu'elle tient dans le
+     repère 0-64 au lieu de déborder du cadre. */
+  test('chaque silhouette est complète et tient dans le cadre', () => {
+    const casse = ev(`Object.keys(ART).filter(function(k){
+      var s = ART[k];
+      if ((s.match(/class="af-h"/g) || []).length !== 1) return true;
+      if ((s.match(/class="af-b"/g) || []).length < 3) return true;
+      var n = s.match(/-?\\d+(\\.\\d+)?/g) || [];
+      return n.some(function(v){ v = parseFloat(v); return v < -1 || v > 65; });
+    })`);
+    eq(casse.length, 0, 'silhouettes incomplètes ou hors cadre : ' + casse.join(', '));
+  });
+
   test('les vignettes accompagnent les exercices de la séance', async () => {
     ev("go('train')"); await wait(120);
     const lignes = all('#exo-list .exo').length;

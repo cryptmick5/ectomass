@@ -1160,156 +1160,322 @@ const EX={
    position clé du mouvement. Rien n'est téléchargé et rien n'est stocké :
    pas de photo à héberger, pas de licence à suivre, l'app reste un seul
    fichier utilisable hors-ligne, et le trait suit le thème.
-   Convention : le corps regarde à droite, le sol est à y=58, l'orange
-   porte le corps, le bleu la charge, le gris le matériel. */
+   Convention : de profil le corps regarde à droite, le sol est à y=58,
+   l'orange porte le corps, le bleu la charge, le gris le matériel. Les
+   mouvements symétriques (élévations, curls, développé militaire, tractions)
+   sont dessinés de face : de profil les deux bras se superposent. */
 const ART=(()=>{
-  const line=(...p)=>p.slice(1).map((q,i)=>`M${p[i][0]} ${p[i][1]}L${q[0]} ${q[1]}`).join('');
-  const body=(...p)=>`<path class="af-b" d="${line(...p)}"/>`;      // membres au premier plan
-  const far=(...p)=>`<path class="af-f" d="${line(...p)}"/>`;       // membres du côté opposé
-  const head=(x,y)=>`<circle class="af-h" cx="${x}" cy="${y}" r="4"/>`;
-  const pad=(...p)=>`<path class="af-m" d="${line(...p)}"/>`;       // bancs, dossiers, plateaux
-  const frame=(...p)=>`<path class="af-s" d="${line(...p)}"/>`;     // montants, câbles, pieds de banc
-  const bar=(...p)=>`<path class="af-e" d="${line(...p)}"/>`;       // barres et poignées
+  /* ---- trait ---- */
+  const d=(...p)=>p.map((q,i)=>(i?'L':'M')+q[0]+' '+q[1]).join('');
+  const body=(...p)=>`<path class="af-b" d="${d(...p)}"/>`;   // membres au premier plan
+  const far=(...p)=>`<path class="af-f" d="${d(...p)}"/>`;    // membres du côté opposé
+  const pad=(...p)=>`<path class="af-m" d="${d(...p)}"/>`;    // bancs, dossiers, plateaux
+  const frame=(...p)=>`<path class="af-s" d="${d(...p)}"/>`;  // montants, câbles, pieds de banc
+  const bar=(...p)=>`<path class="af-e" d="${d(...p)}"/>`;    // barres et poignées
   const disc=(x,y,h)=>`<rect class="af-p" x="${x-1.7}" y="${y-h/2}" width="3.4" height="${h}" rx="1.4"/>`;
-  const barbell=(x1,x2,y,h)=>bar([x1,y],[x2,y])+disc(x1+2.6,y,h)+disc(x2-2.6,y,h);
+  const barbell=(x1,x2,y,h)=>bar([x1,y],[x2,y])+disc(x1+2.8,y,h)+disc(x2-2.8,y,h);
   const db=(x,y)=>bar([x-3.2,y],[x+3.2,y])+disc(x-3.2,y,8)+disc(x+3.2,y,8);
   const dbv=(x,y)=>bar([x,y-3.2],[x,y+3.2])
     +`<rect class="af-p" x="${x-4}" y="${y-4.9}" width="8" height="3.4" rx="1.4"/>`
     +`<rect class="af-p" x="${x-4}" y="${y+1.5}" width="8" height="3.4" rx="1.4"/>`;
   const box=(x,y,w,h)=>`<rect class="af-box" x="${x}" y="${y}" width="${w}" height="${h}" rx="2.5"/>`;
   const wheel=(x,y,r)=>`<circle class="af-box" cx="${x}" cy="${y}" r="${r}"/>`;
-  const floor='<path class="af-x" d="M5 58h54"/>';
-  const bench=(x1,x2,y)=>pad([x1,y],[x2,y])+frame([x1+4,y+1],[x1+4,57])+frame([x2-4,y+1],[x2-4,57]);
-  /* fente : base commune aux fentes marchées, aux fentes haltères et au split squat */
-  const lunge=floor+far([28,34],[19,47],[15,56])
-    +body([28,20],[28,34],[40,43],[40,56])
-    +far([28,20],[31,27],[32,34])
-    +body([28,20],[25,27],[23,33])+head(29,12)+db(21,35);
+  const floor='<path class="af-x" d="M4 58h56"/>';
+  const bench=(x1,x2,y)=>pad([x1,y],[x2,y])+frame([x1+4,y+1],[x1+4,56.5])+frame([x2-4,y+1],[x2-4,56.5]);
+  const skull=p=>`<circle class="af-h" cx="${p[0]}" cy="${p[1]}" r="4"/>`;
+
+  /* Un bonhomme se décrit par ses articulations, jamais par des traits libres :
+     c'est ce qui garde les mêmes proportions d'un dessin à l'autre (tronc 14.5,
+     cuisse 11.5, tibia 12, bras 8.5 + 8.5, tête à 7 du cou). `side` empile les
+     membres opposés d'abord pour donner la profondeur, puis le tronc, puis les
+     membres proches, puis la tête. La tête suit l'axe du tronc toute seule. */
+  const NECK=7;
+  const away=(a,b,n)=>{const x=a[0]-b[0],y=a[1]-b[1],l=Math.hypot(x,y)||1;
+    return [Math.round((a[0]+x/l*n)*10)/10,Math.round((a[1]+y/l*n)*10)/10];};
+  const side=j=>(j.legF?far(j.hip,...j.legF):'')+(j.armF?far(j.sh,...j.armF):'')
+    +body(j.sh,j.hip)+(j.leg?body(j.hip,...j.leg):'')+(j.arm?body(j.sh,...j.arm):'')
+    +skull(j.head||away(j.sh,j.hip,NECK));
+  /* Vue de face pour les mouvements symétriques (élévations, curls, développé
+     militaire) : de profil les deux bras se superposent et on ne voit plus rien.
+     Les épaules et le bassin deviennent deux barres, les membres partent des
+     extrémités. */
+  const front=j=>{
+    const w=j.sw||7.5,h=j.hw||5,[sx,sy]=j.sh,[hx,hy]=j.hip;
+    return body([sx-w,sy],[sx+w,sy])+body(j.sh,j.hip)+body([hx-h,hy],[hx+h,hy])
+      +body([hx-h,hy],...j.legL)+body([hx+h,hy],...j.legR)
+      +body([sx-w,sy],...j.armL)+body([sx+w,sy],...j.armR)
+      +skull(j.head||[sx,sy-NECK]);
+  };
+  /* Jambes debout de face, identiques pour tous les mouvements symétriques. */
+  const legL=[[26,44.5],[26,55.5],[21.5,57]],legR=[[38,44.5],[38,55.5],[42.5,57]];
+
+  /* Fente : même squelette pour les fentes marchées, les fentes haltères et le
+     split squat — seul le sol change (pas en avant, pieds figés). */
+  const lunge=floor+side({
+    hip:[28,36],sh:[29,21.5],
+    legF:[[21,46],[15,56],[20,57]],
+    leg:[[38,44],[39,55.5],[45,57]],
+    armF:[[31,30],[31,38.5]],
+    arm:[[29,30],[28,38.5]]})+db(27,40.5);
 
   return {
     /* ---- bas du corps ---- */
-    squat:floor+far([26,36],[35,42],[31,56])
-      +body([31,22],[26,36],[38,42],[34,56])+body([31,22],[27,27],[28,22])
-      +head(33,15)+barbell(17,45,22,15),
-    frontsquat:floor+far([27,36],[36,43],[32,56])
-      +body([30,21],[27,36],[39,43],[35,56])+body([30,21],[33,27],[35,25])
-      +head(31,13)+dbv(38,25),
-    sdt:floor+far([23,33],[31,45],[28,56])
-      +body([35,26],[23,33],[33,44],[30,56])+body([35,26],[36,37],[37,48])
-      +head(41,22)+barbell(21,53,48,16),
-    rdl:floor+far([21,31],[23,44],[22,56])
-      +body([33,27],[21,31],[24,44],[23,56])+body([33,27],[34,35],[35,43])
-      +head(39,25)+barbell(22,48,44,13),
-    hipthrust:floor+bench(6,26,36)
-      +far([32,34],[41,39],[42,56])
-      +body([18,33],[32,34],[43,38],[44,56])+body([18,33],[23,32],[28,31])
-      +head(13,30)+barbell(20,46,29,15),
-    presse:floor+pad([8,54],[22,34])+frame([12,55],[12,57])
-      +far([14,49],[30,44],[41,34])
-      +body([19,39],[14,49],[32,41],[43,31])+body([19,39],[22,45],[26,49])
-      +head(23,33)+pad([39,24],[49,36])+disc(53,30,13),
-    fentes:lunge+frame([44,53],[54,53],[51,50])+frame([54,53],[51,56]),
+    /* Squat barre, position basse : barre sur les trapèzes, buste incliné,
+       genoux au-dessus des pointes. */
+    squat:floor+barbell(15,43,30,14)+side({
+      hip:[23,43],sh:[28,29.5],
+      legF:[[31,45],[26,55.5],[31,57]],
+      leg:[[34,44],[28,55],[33,57]],
+      armF:[[22,37],[25,30]],
+      arm:[[21,37.5],[24,30]]}),
+    /* Squat avant / gobelet : charge devant, buste vertical, genoux avancés. */
+    frontsquat:floor+side({
+      hip:[27,43],sh:[29,28.5],
+      legF:[[35,45],[30,55.5],[35,57]],
+      leg:[[38.5,44],[31,55],[36,57]],
+      armF:[[25,36],[31,30]],
+      arm:[[24,36],[32,30]]})+dbv(34,29.5),
+    /* Soulevé de terre, départ : barre au sol contre les tibias, hanches
+       hautes, épaules au-dessus de la barre. */
+    sdt:floor+barbell(16,46,50,13.5)+side({
+      hip:[20,39],sh:[33,32],
+      legF:[[27,45],[23,55.5],[29,57]],
+      leg:[[30,44.5],[25,55],[31,56.8]],
+      armF:[[34,40.5],[34,49]],
+      arm:[[32,40.5],[31.5,49]]}),
+    /* Roumain : genoux presque tendus, hanches loin en arrière, barre à
+       mi-tibia. */
+    rdl:floor+barbell(20,48,48,12)+side({
+      hip:[20,34],sh:[34,31],
+      legF:[[25,44],[26,55.5],[31,57]],
+      leg:[[27,43.5],[28,55],[34,56.8]],
+      armF:[[35,39.5],[35,48]],
+      arm:[[34,39.5],[34,48]]}),
+    /* Hip thrust : haut du dos calé sur le banc, hanches verrouillées en haut,
+       tibias verticaux. */
+    hipthrust:floor+bench(4,24,42)+barbell(16,42,37,13)+side({
+      hip:[28,41],sh:[14,40],
+      legF:[[36,44],[38,54.5],[43,56]],
+      leg:[[39,42],[41,54],[46,55.5]],
+      arm:[[20,45],[27,41]]}),
+    /* Presse à cuisses : dos plaqué au dossier incliné, poussée vers le
+       plateau chargé. */
+    presse:floor+pad([21,52],[10,41])+pad([20,53],[30,53])
+      +frame([23,54],[23,57])+frame([29,54],[29,57])
+      +pad([39,32],[47,42])+disc(52,34,13)+side({
+      hip:[23,50],sh:[13,39.5],
+      legF:[[31,47],[40,39]],
+      leg:[[34,45],[43,37]],
+      arm:[[12,46],[19,48]]}),
+    /* Fentes marchées : la flèche au sol dit que le pas se déplace. */
+    fentes:lunge+frame([46,53],[54,53],[51,50.5])+frame([54,53],[51,55.5]),
     fenteshalt:lunge,
-    splitsquat:lunge+'<path class="af-lock" d="M11 58h9M36 58h9"/>',
-    bulgare:floor+bench(6,24,44)
-      +far([34,34],[27,46],[21,43])
-      +body([34,20],[34,34],[44,44],[43,57])+far([34,20],[31,27],[30,33])
-      +body([34,20],[37,26],[38,32])+head(35,13)+db(40,34),
-    stepup:floor+box(36,42,22,16)
-      +far([26,32],[24,45],[23,57])
-      +body([26,19],[26,32],[38,38],[41,42])+far([26,19],[29,26],[30,32])
-      +body([26,19],[23,26],[22,32])+head(27,12)+db(20,34),
-    legcurl:floor+bench(10,44,40)
-      +far([44,37],[49,27])
-      +body([19,37],[34,37],[44,37],[50,25])+body([19,37],[15,42],[11,45])
-      +head(12,33)+wheel(51,24,4)+bar([8,45],[15,45]),
-    mollets:floor+box(26,52,18,6)
-      +body([32,20],[32,33],[32,43],[33,50])+body([33,50],[39,52])+body([33,50],[28,47])
-      +far([32,20],[35,27],[36,34])+body([32,20],[30,27],[29,34])
-      +head(32,13)+db(28,36),
-    molletsassis:floor+pad([8,48],[26,48])+frame([12,49],[12,57])+box(34,52,12,6)
-      +body([16,32],[16,46],[32,46],[34,52])+body([34,52],[40,52])
-      +body([16,32],[20,38],[26,40])+head(17,25)+box(22,38,14,5),
+    /* Split squat : mêmes appuis, mais les pieds ne bougent plus de la série. */
+    splitsquat:lunge+'<path class="af-lock" d="M10 57.5h11M35 57.5h12"/>',
+    /* Squat bulgare : pied arrière posé sur le banc, tout le poids devant. */
+    bulgare:floor+bench(4,22,46)+side({
+      hip:[34,36],sh:[35,21.5],
+      legF:[[28,47],[17,44],[12,45.5]],
+      leg:[[40,45.5],[41,56],[46,57]],
+      armF:[[33,30],[32,38.5]],
+      arm:[[37,30],[38,38.5]]})+db(39,40),
+    /* Montées sur banc : cuisse avant à l'horizontale, la jambe au sol ne
+       pousse pas. */
+    stepup:floor+box(36,48,22,10)+side({
+      hip:[28,33],sh:[28,18.5],
+      legF:[[25,44.5],[25,55.5],[30,57]],
+      leg:[[39,36],[41,47],[47,48]],
+      armF:[[26,27],[25,35.5]],
+      arm:[[30,27],[31,35.5]]})+db(31,37),
+    /* Leg curl allongé : bassin plaqué, talons ramenés vers les fessiers. */
+    legcurl:floor+pad([10,40],[44,40])+frame([14,41],[14,56.5])+frame([40,41],[40,56.5])
+      +frame([46,40],[48,27])+wheel(49,25,4)+bar([8,44],[15,44])+side({
+      hip:[33,37],sh:[18,37],
+      legF:[[42,39],[45,29]],
+      leg:[[44,38],[48,27]],
+      arm:[[13,41],[10,44]]}),
+    /* Mollets debout : pointes sur la cale, talons dans le vide, montée
+       complète. */
+    mollets:floor+box(28,54,18,4)+side({
+      hip:[32,28.5],sh:[32,15.5],
+      legF:[[30,39],[30,50]],
+      leg:[[32,39],[32,50],[38,54.5]],
+      armF:[[30,24],[29,32]],
+      arm:[[34,24],[35,32]]})+body([32,50],[26,52.5])+db(36,33.5),
+    /* Mollets assis : genoux fléchis sous la charge, talons dans le vide. */
+    molletsassis:floor+bench(8,26,44)+box(33,55,16,3)
+      +box(26,35,14,5)+frame([40,37.5],[45,37.5])+disc(46,38,12)+side({
+      hip:[22,42],sh:[21,27.5],
+      legF:[[31,43],[33,54]],
+      leg:[[33,42],[35,53],[41,55.5]],
+      arm:[[24,35],[30,37]]})+body([35,53],[31,54.5]),
 
     /* ---- pousser ---- */
-    dc:floor+bench(12,50,38)
-      +body([26,34],[40,34],[48,42],[50,56])+far([26,34],[29,27],[28,22])
-      +body([26,34],[25,26],[27,22])+head(19,33)+barbell(13,41,21,14),
-    dchalt:floor+bench(12,50,38)
-      +body([26,34],[40,34],[48,42],[50,56])+far([26,34],[29,27],[31,22])
-      +body([26,34],[24,26],[26,21])+head(19,33)+db(26,20),
-    dcinc:floor+pad([18,53],[40,26])+frame([22,52],[22,57])
-      +body([34,32],[25,45],[17,51],[12,57])+far([34,32],[36,25],[39,20])
-      +body([34,32],[33,25],[36,20])+head(39,27)+db(36,19),
-    floorpress:floor
-      +body([23,50],[36,52],[45,44],[51,56])+far([23,50],[26,43],[29,37])
-      +body([23,50],[21,42],[24,36])+head(17,47)+db(24,35),
-    ohp:floor+body([30,31],[30,41],[30,49],[31,57])
-      +far([30,31],[38,25],[35,12])+body([30,31],[23,25],[26,12])
-      +head(31,25)+barbell(15,47,11,12),
-    dvepaules:floor+pad([22,52],[38,52])+pad([22,52],[21,30])+frame([26,53],[26,57])
-      +body([26,35],[26,50],[38,50],[39,57])+far([26,35],[31,31],[30,23])
-      +body([26,35],[21,31],[24,23])+head(28,28)+db(24,22),
-    dips:floor+frame([12,31],[12,57])+frame([52,31],[52,57])
-      +far([32,26],[38,32],[40,30])
-      +body([32,26],[32,40],[37,49],[32,55])+body([32,26],[26,32],[24,30])
-      +head(33,19)+bar([8,30],[26,30])+bar([38,30],[56,30]),
-    ecarte:floor+bench(14,50,40)
-      +body([26,36],[40,36],[48,44],[50,56])+far([26,36],[30,29],[34,23])
-      +body([26,36],[22,29],[18,23])+head(18,36)+db(17,21)+db(35,21),
-    triceps:floor+frame([14,8],[14,57])+wheel(14,10,3)+frame([14,13],[24,32])
-      +body([34,22],[34,35],[34,46],[33,57])+far([34,22],[33,30],[28,35])
-      +body([34,22],[32,30],[26,34])+head(36,15)+bar([21,34],[30,34]),
-    tricepsnuque:floor+body([29,29],[30,40],[30,49],[31,57])
-      +far([29,29],[34,18],[26,15])+body([29,29],[38,16],[25,12])
-      +head(27,23)+dbv(20,12),
+    /* Développé couché : omoplates serrées, pieds ancrés, barre au-dessus des
+       pecs. */
+    dc:floor+bench(10,48,40)+barbell(10,42,20,13.5)+side({
+      hip:[38,37],sh:[24,37],
+      legF:[[44,46],[46,55.5],[51,57]],
+      leg:[[46,44],[48,55],[53,56.8]],
+      armF:[[25,30],[25,22]],
+      arm:[[27,29],[26,21]]}),
+    /* Développé couché haltères : deux charges libres au lieu de la barre. */
+    dchalt:floor+bench(10,48,40)+side({
+      hip:[38,37],sh:[24,37],
+      legF:[[44,46],[46,55.5],[51,57]],
+      leg:[[46,44],[48,55],[53,56.8]],
+      armF:[[24,30],[23,22]],
+      arm:[[28,29],[29,21]]})+db(23,20)+db(30,19),
+    /* Développé incliné : banc à 30°, haltères au niveau du haut des pecs. */
+    dcinc:floor+pad([32,49],[13,33])+pad([26,50],[40,50])
+      +frame([16,42],[16,57])+frame([36,51],[36,57])+side({
+      hip:[30,47],sh:[19.5,37],
+      legF:[[39,46],[41,55.5],[46,57]],
+      leg:[[41,45],[43,55],[48,56.8]],
+      armF:[[22,32],[26,25]],
+      arm:[[24,30],[28,23]]})+db(29,21)+db(26,24),
+    /* Développé au sol : le sol coupe la descente avant que l'épaule ne parte
+       trop en arrière. */
+    floorpress:floor+side({
+      hip:[36,50],sh:[22,50],
+      legF:[[42,45],[45,55.5],[50,57]],
+      leg:[[45,43],[47,55],[52,56.8]],
+      armF:[[23,43],[24,35]],
+      arm:[[25,42],[26,34]]})+db(26,32)+db(23,33),
+    /* Développé militaire, verrouillage : barre au-dessus de la tête, corps
+       gainé. Vue de face, la barre passerait dans le profil. */
+    ohp:floor+front({
+      sh:[32,21],hip:[32,34],
+      legL:[[26,45],[26,56],[21.5,57.5]],legR:[[38,45],[38,56],[42.5,57.5]],
+      armL:[[21,15],[20,10.5]],armR:[[43,15],[44,10.5]]})+barbell(12,52,10,11),
+    /* Développé épaules assis : dossier vertical, haltères au niveau des
+       oreilles en bas. */
+    dvepaules:floor+pad([16,46],[34,46])+pad([17,45],[17,26])
+      +frame([20,47],[20,56.5])+frame([31,47],[31,56.5])+side({
+      hip:[22,44],sh:[21,29.5],
+      legF:[[31,44],[33,54]],
+      leg:[[33,43],[35,55],[40,56.8]],
+      armF:[[18,23],[17,15]],
+      arm:[[25,22],[26,14]]})+db(27,12)+db(16,13),
+    /* Dips : barres parallèles, épaules au niveau des coudes, genoux repliés
+       (les pieds ne touchent pas le sol : pas de ligne de sol ici). */
+    dips:frame([11,27],[11,56])+frame([53,27],[53,56])
+      +bar([39,26],[58,26])+bar([6,26],[27,26])+side({
+      hip:[31,42],sh:[34,28],
+      legF:[[32,51],[25,53]],
+      leg:[[34,52],[26,54]],
+      armF:[[39,34],[39,27]],
+      arm:[[26,34],[27,26]]}),
+    /* Écarté couché : coudes fixes, bras ouverts en arc jusqu'à l'étirement. */
+    ecarte:floor+bench(12,50,40)+side({
+      hip:[40,37],sh:[26,37],
+      legF:[[46,46],[48,55.5],[53,57]],
+      leg:[[48,44],[50,55],[55,56.8]],
+      armF:[[32,30],[36,23]],
+      arm:[[21,30],[17,23]]})+db(16,21)+db(37,21),
+    /* Extension triceps poulie : coudes collés au corps, extension vers le
+       bas. */
+    triceps:floor+frame([50,5],[50,56])+wheel(50,10,3.5)+frame([50,13.5],[35,33])
+      +bar([31,35],[40,35])+side({
+      hip:[26,32],sh:[27,17.5],
+      legF:[[28,44],[28,55.5],[33,57]],
+      leg:[[25,43.5],[25,55],[30,56.8]],
+      armF:[[29,26],[32,33]],
+      arm:[[28,26],[33,34]]}),
+    /* Extension nuque : coudes serrés et pointés vers le haut, haltère derrière
+       la tête. Vue de face, les deux coudes se lisent. */
+    tricepsnuque:floor+dbv(19,16)+side({
+      hip:[27,32],sh:[30,17.7],head:[34,12],
+      legF:[[25,43.5],[25,55]],
+      leg:[[28,43.5],[28,55],[34,56.8]],
+      armF:[[25,10.5],[20,15]],
+      arm:[[27,9.5],[22,14]]}),
 
     /* ---- tirer ---- */
-    traction:frame([12,15],[12,5])+frame([52,15],[52,5])+bar([10,15],[54,15])
-      +far([32,20],[39,21],[38,15])+far([32,34],[36,44],[32,52])
-      +body([32,20],[32,34],[35,45],[31,53])+body([32,20],[25,21],[26,15])
-      +head(32,11),
-    tiragenut:floor+pad([14,46],[32,46])+frame([18,47],[18,57])
-      +pad([28,40],[38,40])+frame([33,41],[33,45])
-      +wheel(37,7,3)+frame([37,10],[37,18])
-      +body([24,31],[22,44],[34,45],[36,56])+far([24,31],[31,25],[36,19])
-      +body([24,31],[29,24],[34,19])+head(20,25)+bar([31,18],[43,18]),
-    rowbarre:floor+far([22,32],[20,44],[19,56])
-      +body([36,26],[22,32],[21,44],[20,56])+body([36,26],[36,34],[33,37])
-      +head(42,23)+barbell(21,47,38,13),
-    rowhalt:floor+bench(4,24,42)
-      +far([28,32],[21,41],[13,41])+far([13,29],[16,36],[18,41])
-      +body([13,29],[28,32],[30,45],[31,57])+body([13,29],[13,37],[13,44])
-      +head(8,26)+db(13,46),
-    oiseau:floor+far([22,34],[20,45],[19,56])
-      +body([36,30],[22,34],[21,45],[20,56])+far([36,30],[41,24],[45,20])
-      +body([36,30],[31,24],[27,20])+head(42,28)+db(25,19)+db(47,19),
-    elevlat:floor+far([32,36],[36,47],[37,57])
-      +body([32,19],[32,36],[28,47],[27,57])
-      +body([32,20],[24,19],[18,20])+body([32,20],[40,19],[46,20])
-      +head(32,12)+db(14,20)+db(50,20),
-    curl:floor+body([30,20],[30,34],[30,46],[31,57])
-      +far([30,20],[27,28],[26,35])+body([30,20],[30,28],[38,25])
-      +head(30,13)+db(41,24),
-    marteau:floor+body([30,20],[30,34],[30,46],[31,57])
-      +far([30,20],[27,28],[26,35])+body([30,20],[30,28],[38,26])
-      +head(30,13)+dbv(41,25),
-    curlincline:floor+pad([18,53],[40,26])+frame([22,52],[22,57])
-      +body([33,32],[24,45],[16,51],[11,57])+far([33,32],[31,39],[30,46])
-      +body([33,32],[35,39],[36,46])+head(38,27)+db(37,48),
+    /* Tractions : menton au-dessus de la barre, jambes repliées. Pas de sol :
+       le corps est suspendu. */
+    traction:frame([14,14],[14,5])+frame([50,14],[50,5])+bar([8,14],[56,14])
+      +front({
+      sh:[32,26],hip:[32,40],
+      legL:[[26,48],[28,54]],legR:[[38,48],[36,54]],
+      armL:[[19,21],[18,14]],armR:[[45,21],[46,14]]}),
+    /* Tirage vertical prise neutre : cuisses calées, coudes tirés vers les
+       hanches. */
+    tiragenut:floor+frame([50,6],[50,56])+wheel(50,9.5,3.5)+frame([50,13],[31,28])
+      +pad([12,44],[30,44])+frame([16,45],[16,56.5])+frame([27,45],[27,56.5])
+      +box(24,37,14,4)+bar([27,29],[33,29])+side({
+      hip:[20,42],sh:[18,28],
+      legF:[[29,43],[31,54]],
+      leg:[[31,42],[33,54],[38,55.5]],
+      armF:[[21,35],[27,32]],
+      arm:[[22,35],[28,30]]}),
+    /* Rowing barre : buste à ~45°, barre tirée vers le bas-ventre. */
+    rowbarre:floor+barbell(16,44,42,13)+side({
+      hip:[20,36],sh:[31,26],
+      legF:[[31,44],[31,55.5],[36,57]],
+      leg:[[28,43.5],[28,55],[34,56.8]],
+      armF:[[30,34],[28,41]],
+      arm:[[33,34],[30,41]]}),
+    /* Rowing haltère 1 bras : un genou et une main sur le banc, dos parallèle
+       au sol, coude qui mène. */
+    rowhalt:floor+bench(6,30,42)+side({
+      hip:[33,29],sh:[18,28],
+      legF:[[30,38],[24,41.5]],
+      leg:[[36,42],[38,54],[43,55.5]],
+      armF:[[17,36],[16,42]],
+      arm:[[24,21],[28,29]]})+db(29,31),
+    /* Oiseau : buste penché, coudes qui mènent jusqu'à l'horizontale. */
+    oiseau:floor+side({
+      hip:[22,36],sh:[35,31],
+      legF:[[32,44],[33,55.5],[38,57]],
+      leg:[[29,43.5],[30,55],[36,56.8]],
+      armF:[[40,25],[46,21]],
+      arm:[[30,25],[24,21]]})+db(22,20)+db(48,20),
+    /* Élévations latérales : montée jusqu'à l'horizontale, coudes
+       semi-fléchis. */
+    elevlat:floor+front({
+      sh:[32,19],hip:[32,33],legL:legL,legR:legR,
+      armL:[[16,20],[9,22]],armR:[[48,20],[55,22]]})+db(8,22)+db(56,22),
+    /* Curl : un bras en haut, un bras tendu — les deux bouts du mouvement. */
+    curl:floor+front({
+      sh:[32,19],hip:[32,33],legL:legL,legR:legR,
+      armL:[[24,28],[28,21]],armR:[[40,28],[41,36]]})+db(29,19)+db(41,38),
+    /* Curl marteau : même geste, prise neutre (haltères verticaux). */
+    marteau:floor+front({
+      sh:[32,19],hip:[32,33],legL:legL,legR:legR,
+      armL:[[24,28],[28,21]],armR:[[40,28],[41,36]]})+dbv(29,18)+dbv(41,39),
+    /* Curl incliné : bras qui pendent en arrière du dossier, biceps en
+       étirement complet. */
+    curlincline:floor+pad([32,49],[13,33])+pad([26,50],[40,50])
+      +frame([15,42],[15,57])+frame([36,51],[36,57])+side({
+      hip:[30,47],sh:[19.5,37],
+      legF:[[39,46],[41,55.5],[46,57]],
+      leg:[[41,45],[43,55],[48,56.8]],
+      armF:[[22,45],[23,53]],
+      arm:[[19.5,45.5],[20,54]]})+db(20,55.5),
 
     /* ---- gainage ---- */
-    gainage:floor+far([36,45],[45,50],[52,56])
-      +body([24,39],[36,45],[44,50],[52,55])+body([52,55],[55,57])
-      +body([24,39],[22,54],[33,55])+head(18,36),
-    crunch:floor+far([35,53],[44,46],[49,55])
-      +body([25,47],[35,53],[45,45],[50,56])+body([25,47],[25,40],[21,36])
-      +head(20,42),
+    /* Planche : ligne droite des épaules aux talons, appui sur les
+       avant-bras. */
+    gainage:floor+side({
+      hip:[29,49],sh:[15,46],
+      legF:[[39,54],[50,56.5]],
+      leg:[[40,52],[51,55],[55,57]],
+      armF:[[17,54],[25,55.5]],
+      arm:[[14,55],[23,56]]}),
+    /* Relevé de jambes : dos au sol, bassin légèrement enroulé, jambes
+       montées. */
+    crunch:floor+side({
+      hip:[30,52],sh:[16,52],
+      legF:[[32,42],[35,31]],
+      leg:[[34,41],[37,30],[41,28]],
+      arm:[[22,55],[29,56]]}),
 
-    /* exercice personnalisé : silhouette générique */
-    _:floor+body([31,21],[31,35],[31,46],[32,57])
-      +far([31,21],[33,28],[34,35])+body([31,21],[29,28],[28,35])
-      +head(31,14)+db(27,37)
+    /* Exercice créé par l'utilisateur : silhouette générique, haltères le long
+       du corps. */
+    _:floor+front({
+      sh:[32,19],hip:[32,33],legL:legL,legR:legR,
+      armL:[[24,28],[24,36]],armR:[[40,28],[40,36]]})+db(24,38)+db(40,38)
   };
 })();
 /* Un exercice créé par l'utilisateur retombe sur la silhouette générique. */
