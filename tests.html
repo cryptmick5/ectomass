@@ -470,11 +470,27 @@ suite('Séance', () => {
     ev("go('train')"); await wait(120);
     const lignes = all('#exo-list .exo').length;
     ok(lignes > 0, 'aucun exercice affiché');
-    eq(all('#exo-list .exo .top > svg.exo-fig').length, lignes, 'vignette manquante sur une ligne');
-    eq(all('#exo-list .exo.open .exo-hero svg.exo-fig').length, 1, 'illustration absente de la fiche ouverte');
+    eq(all('#exo-list .exo .top > .exo-fig').length, lignes, 'vignette manquante sur une ligne');
+    eq(all('#exo-list .exo.open .exo-hero .exo-fig').length, 1, 'illustration absente de la fiche ouverte');
     /* décoratives : le nom de l'exercice est déjà lu à côté */
-    ok(all('#exo-list svg.exo-fig').every(s => s.getAttribute('aria-hidden') === 'true'),
+    ok(all('#exo-list .exo-fig > svg').every(s => s.getAttribute('aria-hidden') === 'true'),
        'illustration exposée aux lecteurs d\'écran');
+  });
+
+  test('la photo manquante laisse la silhouette en place', async () => {
+    ev("go('train')"); await wait(120);
+    const vignette = all('#exo-list .exo .top > .exo-fig')[0];
+    ok(vignette.querySelector('svg.exo-art'), 'silhouette absente sous la photo');
+    const img = vignette.querySelector('img.exo-photo');
+    ok(img, 'aucune photo tentée sur un exercice de la bibliothèque');
+    match(img.getAttribute('src'), /^exercices\/[a-z0-9_]+\.webp$/, 'chemin de photo inattendu');
+    /* le fichier n'existe pas encore : l'image doit disparaître, pas casser */
+    img.dispatchEvent(new APP.Event('error'));
+    await wait(30);
+    eq(vignette.querySelector('img.exo-photo'), null, 'image cassée laissée dans la page');
+    ok(vignette.querySelector('svg.exo-art'), 'silhouette perdue avec la photo');
+    /* un exercice créé à la main n'aura jamais de photo : aucune requête inutile */
+    ok(!ev("exoVisuel('cx_test').includes('<img')"), 'photo tentée sur un exercice personnalisé');
   });
 });
 

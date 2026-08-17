@@ -4,7 +4,7 @@ Application web PWA (installable, hors-ligne) pour la prise de masse en musculat
 
 ## Fonctionnalités
 - **Profil & calories** : calcul Mifflin-St Jeor → TDEE → surplus, macros (protéines 2 g/kg), onboarding au 1er lancement.
-- **Entraînement** : mésocycle 12 semaines full-body 3×/sem, surcharge progressive adaptative, timer de repos, séries d'échauffement, PR & 1RM estimé, volume par muscle, composition de séance personnalisable (échange/ajout/création d'exercices), calculateur de disques, **illustration de chaque exercice** (silhouettes SVG dessinées dans le fichier, donc hors-ligne et sans licence à suivre).
+- **Entraînement** : mésocycle 12 semaines full-body 3×/sem, surcharge progressive adaptative, timer de repos, séries d'échauffement, PR & 1RM estimé, volume par muscle, composition de séance personnalisable (échange/ajout/création d'exercices), calculateur de disques, **illustration de chaque exercice** : silhouette vectorielle dessinée dans le fichier (hors-ligne, aucune licence à suivre), surmontée d'une photo si `exercices/<id>.webp` existe.
 - **Nutrition** : journal groupé par repas avec portions au gramme éditables, base d'aliments + aliments perso/récents, générateur de menus jour ET semaine (cohérents), liste de courses éditable et copiable, suivi hydratation.
 - **Progression** : courbe de poids avec tendance lissée, graphes 1RM/volume, historique, notes de séance et RIR ressenti.
 - **Sauvegarde & synchro** : export/import JSON + synchronisation multi-appareils via un gist GitHub privé (voir ci-dessous).
@@ -27,6 +27,8 @@ La fusion est faite entrée par entrée : le journal alimentaire, les séances e
 
 ## Fichiers
 - `index.html` — l'application complète
+- `exercices/` — photos d'exercices, **facultatives** (voir `exercices/README.md`) : sans elles, l'app affiche les silhouettes vectorielles dessinées dans `index.html`
+- `tools/generate-exercise-images.mjs` — génère ces photos (`--check` vérifie hors-ligne que chaque exercice a son prompt)
 - `manifest.webmanifest`, `service-worker.js` — support PWA (installable + hors-ligne)
 - `icon-192.png`, `icon-512.png`, `icon-512-maskable.png` — icônes
 - `.nojekyll` — désactive le traitement Jekyll sur GitHub Pages
@@ -40,7 +42,7 @@ Sur mobile : ouvrir cette URL → menu du navigateur → « Ajouter à l'écran 
 
 ## Tests
 
-`tests.html` charge l'application dans une iframe et rejoue 60 assertions : socle de données,
+`tests.html` charge l'application dans une iframe et rejoue 61 assertions : socle de données,
 fusion multi-appareils, échappement des contenus saisis, suivi de poids, cohérence des chiffres
 affichés, libellés, séance, dialogues, accessibilité, nutrition, profil.
 

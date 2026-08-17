@@ -226,9 +226,11 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(25
 .exo .body{padding:0 13px 13px;display:none}
 .exo.open .body{display:block;animation:acc .34s var(--ease)}
 
-/* illustrations d'exercices : SVG inline dessinés par ART (aucun fichier externe) */
-.exo-fig{width:42px;height:42px;flex-shrink:0;border-radius:11px;background:var(--card3);
-  border:1px solid var(--line2);transition:border-color .28s}
+/* illustrations d'exercices : silhouette SVG (ART) + photo optionnelle par-dessus */
+.exo-fig{position:relative;display:block;width:42px;height:42px;flex-shrink:0;border-radius:11px;
+  background:var(--card3);border:1px solid var(--line2);overflow:hidden;transition:border-color .28s}
+.exo-fig>.exo-art,.exo-fig>.exo-photo{position:absolute;inset:0;width:100%;height:100%;display:block}
+.exo-fig>.exo-photo{object-fit:cover;background:var(--card3)}
 .exo.open .exo-fig{border-color:rgba(255,107,53,.34)}
 .exo-hero{display:flex;align-items:center;gap:11px;margin-bottom:9px}
 .exo-hero .exo-fig{width:88px;height:88px;border-radius:13px}
@@ -1313,8 +1315,18 @@ const ART=(()=>{
   };
 })();
 /* Un exercice créé par l'utilisateur retombe sur la silhouette générique. */
-function exoArt(id,cls){
-  return `<svg class="${cls||'exo-fig'}" viewBox="0 0 64 64" aria-hidden="true" focusable="false">${ART[id]||ART._}</svg>`;
+function exoArt(id){
+  return `<svg class="exo-art" viewBox="0 0 64 64" aria-hidden="true" focusable="false">${ART[id]||ART._}</svg>`;
+}
+/* Visuel d'un exercice : la photo (exercices/<id>.webp, produite par
+   tools/generate-exercise-images.mjs) se pose par-dessus la silhouette.
+   Fichier absent, pas encore téléchargé ou geste mal rendu et donc supprimé :
+   l'image s'efface d'elle-même et le dessin reste. Aucun visuel cassé, et
+   l'app fonctionne à l'identique sans un seul fichier photo.
+   Un exercice créé à la main n'aura jamais de photo : on ne tente même pas. */
+function exoVisuel(id){
+  const photo=ART[id]?`<img class="exo-photo" src="exercices/${encodeURIComponent(id)}.webp" alt="" loading="lazy" decoding="async" onerror="this.remove()">`:'';
+  return `<span class="exo-fig">${exoArt(id)}${photo}</span>`;
 }
 
 /* Deux règles tenues dans les six séances :
@@ -1833,7 +1845,7 @@ function renderExos(){
     const wc=cells.filter(c=>!c.warm);const isFin=wc.length>0&&wc.every(c=>c.done);finishedArr[idx]=isFin;
     return `<div class="exo ${isFin?'finished':''}" data-id="${id}"><button type="button" class="top tapz" data-open-exo="${idx}" aria-expanded="false">
       <div class="num">${idx+1}</div>
-      ${exoArt(id)}
+      ${exoVisuel(id)}
       <div style="flex:1"><b>${esc(e.n)}</b><div class="small prev" style="color:var(--accent2)">${prevTxt}</div>
         <div class="muscles">${(e.m||[]).map(m=>`<span class="tag">${esc(m)}</span>`).join('')}</div></div>
       <div class="small" style="text-align:right"><span data-st="${idx}"></span><br>${tSets}×${isTime?(tReps||'45')+'s':tReps} · <span class="muted">${e.rest}s</span></div></button>
@@ -1844,7 +1856,7 @@ function renderExos(){
           <span class="tag">😮‍💨 Repos ${e.rest}s</span>
           ${e.warm?'<span class="tag" style="color:var(--amber)">🔥 Échauffe-toi</span>':''}
         </div>
-        <div class="exo-hero">${exoArt(id)}<div class="cue">💬 ${esc(e.cue)}</div></div>
+        <div class="exo-hero">${exoVisuel(id)}<div class="cue">💬 ${esc(e.cue)}</div></div>
         ${e.warm?`<div class="warmnote">🔥 <b>Échauffement</b> : 2-3 séries progressives. Appuie sur le n° de série pour la marquer « W » (exclue des PR/volume).</div>`:''}
         ${(()=>{const mn=morphoNote(id);return mn?`<div class="morphonote ${mn.lvl}">${mn.lvl==='good'?'🧬 <b>Adapté à ta morphologie</b>':'🧬 <b>Attention à ta morphologie</b>'} — ${esc(mn.txt)}</div>`:''})()}
         ${recoTxt}
@@ -1982,7 +1994,7 @@ function openExoPicker(mode,idx){exoPickMode=mode;exoPickIdx=(idx==null?null:idx
 function setExoTab(t){$$('#exo-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));syncTabs('#exo-tabs');$('#exo-lib-pane').style.display=t==='lib'?'block':'none';$('#exo-new-pane').style.display=t==='new'?'block':'none'}
 function renderExoResults(q){const lib=exLibrary();const cur=new Set(sessionExos(currentSession));
   const list=Object.keys(lib).filter(id=>lib[id].n.toLowerCase().includes((q||'').toLowerCase()));
-  $('#exo-results').innerHTML=list.map(id=>{const e=lib[id];const inCur=cur.has(id);return `<button type="button" class="qfood tapz" data-pick-exo="${esc(id)}"><span style="display:flex;align-items:center">${exoArt(id)}<span><b>${esc(e.n)}</b><span class="small" style="display:block">${esc((e.m||[]).join(', '))} · ${e.rep[1]?e.rep[0]+'-'+e.rep[1]+' reps':'durée'}</span></span></span>${inCur?'<span class="tag">déjà</span>':'<span class="pill k">＋</span>'}</button>`}).join('')||'<div class="small muted" style="padding:8px">Aucun résultat — crée-le dans l\'onglet « Créer ».</div>'}
+  $('#exo-results').innerHTML=list.map(id=>{const e=lib[id];const inCur=cur.has(id);return `<button type="button" class="qfood tapz" data-pick-exo="${esc(id)}"><span style="display:flex;align-items:center">${exoVisuel(id)}<span><b>${esc(e.n)}</b><span class="small" style="display:block">${esc((e.m||[]).join(', '))} · ${e.rep[1]?e.rep[0]+'-'+e.rep[1]+' reps':'durée'}</span></span></span>${inCur?'<span class="tag">déjà</span>':'<span class="pill k">＋</span>'}</button>`}).join('')||'<div class="small muted" style="padding:8px">Aucun résultat — crée-le dans l\'onglet « Créer ».</div>'}
 function pickExo(id){const arr=sessionExos(currentSession).slice();
   if(exoPickMode==='swap'&&exoPickIdx!=null)arr[exoPickIdx]=id;else{if(arr.includes(id)){toast('Déjà dans la séance');return}arr.push(id)}
   setSessionExos(currentSession,arr);closeModal('#exo-modal');renderExos();toast(exoPickMode==='swap'?'Exercice échangé ✓':'Exercice ajouté ✓')}

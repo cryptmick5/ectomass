@@ -1,4 +1,4 @@
-const CACHE = 'ectomass-v7';
+const CACHE = 'ectomass-v8';
 const ASSETS = [
   './',
   'index.html',
@@ -46,12 +46,17 @@ self.addEventListener('fetch', (e) => {
   }
 
   // Ressources statiques : cache d'abord, réseau en secours.
+  // Les photos d'exercices sont facultatives (exercices/<id>.webp) : une réponse
+  // qui n'est pas OK ne doit surtout pas être mise en cache, sinon un 404 reste
+  // collé et l'image n'apparaîtra jamais, même une fois le fichier déposé.
   e.respondWith(
     caches.match(req).then((cached) => {
       if (cached) return cached;
       return fetch(req).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        }
         return res;
       }).catch(() => cached);
     })
