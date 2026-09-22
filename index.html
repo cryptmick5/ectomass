@@ -491,6 +491,27 @@ body.offline .offbar{display:flex}
 .summary-pr .prow b{color:var(--accent2);font-variant-numeric:tabular-nums}
 
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* ---- Lot Split : trace de progression, réglages du split ---- */
+.progbox{background:var(--card2);border:1px solid var(--line2);border-radius:12px;padding:10px 12px;margin:8px 0 10px;font-size:13px}
+.ptrail{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:7px 0 5px}
+.pchip{background:rgba(255,255,255,.05);border-radius:8px;padding:3px 7px;font-size:12px;white-space:nowrap}
+.parr{color:var(--muted2,var(--muted));font-size:12px}
+.pdelta{font-size:12px;font-weight:750;color:var(--muted)}
+.pdelta.up{color:var(--green)}.pdelta.down{color:var(--red)}
+.tag.kind{color:var(--accent2,var(--accent))}
+.split-info{margin-top:8px;padding-top:8px;border-top:1px solid var(--line2)}
+.split-panel{margin-top:10px;padding:10px 12px;border:1px solid var(--line2);border-radius:12px;background:var(--card2)}
+.split-panel .chip,.split-info~.row .chip{cursor:pointer;min-height:36px}
+.mgroup{font-weight:750;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:12px 0 2px}
+.mgroup:first-child{margin-top:0}
+.mrow{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line2)}
+.mname{min-width:0;flex:1}
+.mval{text-align:right;white-space:nowrap;font-size:13px}
+.setbar{margin-bottom:9px}
+.setbar .mbar{position:relative;margin-top:4px}
+.setbar .mbar i{background:var(--green)}
+.setbar.low .mbar i,.setbar.high .mbar i{background:var(--amber)}
+.setbar .band{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--txt);opacity:.35}
 </style>
 </head>
 <body>
@@ -672,6 +693,14 @@ body.offline .offbar{display:flex}
         <canvas id="lift-chart" height="180" role="img" aria-label="Évolution de la charge par exercice"></canvas>
         <div class="empty-chart" id="lift-empty" style="display:none"></div>
         <div class="small" id="lift-stats" style="margin-top:10px"></div>
+      </div>
+      <div class="card">
+        <div class="between"><h3 style="margin:0">Marge de progression</h3><span class="pill" id="margin-pill"></span></div>
+        <div class="small muted" style="margin:4px 0 10px">Meilleure série de chaque exercice, de ta première séance à la dernière. Tes points faibles passent en tête.</div>
+        <div id="margin-list"></div>
+        <h3 style="margin:18px 0 4px">Séries par muscle <span class="small">(7 j)</span></h3>
+        <div class="small muted" style="margin-bottom:8px">Repère : 10 à 20 séries par semaine et par muscle, le haut de la fourchette pour un point faible. Un exercice compte pour 1 série sur son muscle principal, 0.5 sur les autres.</div>
+        <div id="sets-list"></div>
       </div>
       <div class="grid g2 mstack">
         <div class="card tight"><h3>Records (PR)</h3><div id="pr-list"></div></div>
@@ -862,6 +891,8 @@ body.offline .offbar{display:flex}
     <label class="field"><span>Agressivité du surplus</span>
       <select id="onb-surplus"><option value="250">Lean +250</option><option value="400" selected>Standard +400</option><option value="550">Rapide +550</option></select></label>
   </div>
+  <label class="field" style="margin-bottom:12px"><span>Programme d'entraînement</span>
+    <select id="onb-program"><option value="fondation">Fondation · full-body 3×/sem</option><option value="morpho">Morpho · segments longs</option><option value="split">Split · un groupe musculaire par séance</option></select></label>
   <div class="card tight" id="onb-preview" style="margin-bottom:12px;text-align:center">
     <div class="small muted">Ton objectif quotidien</div>
     <div><b class="mono" id="onb-kcal" style="font-size:28px;letter-spacing:-.02em">—</b> <span class="small muted">kcal</span></div>
@@ -916,9 +947,10 @@ const DEFAULT={
   profile:{sex:'h',age:25,height:178,weight:65,activity:1.375,surplus:400,meals:5,morpho:{bras:'long',femurs:'long'}},
   program:'fondation',
   startDate:todayKey(), weightLog:[], workoutLog:{}, exoState:{}, foodLog:{}, plan:{seed:1,daySeed:{},overrides:{},date:'',removed:[],checked:[]}, view:{week:null,session:'A'}, recentFoods:[], customFoods:[], sessionPlan:{}, customExos:{}, draft:null, profileSet:false, lastExport:null, backupSnooze:0, rest:null,
+  split:{weak:['bras','jambes'],shoulders:'BR',rappel:true},
   stamps:{}, tombs:{}
 };
-const SYNC_SECTIONS=['profile','program','startDate','weightLog','workoutLog','exoState','foodLog','plan','recentFoods','customFoods','sessionPlan','customExos','profileSet'];
+const SYNC_SECTIONS=['profile','program','startDate','weightLog','workoutLog','exoState','foodLog','plan','recentFoods','customFoods','sessionPlan','customExos','profileSet','split'];
 /* sections dont on fusionne les entrées une à une (clé = date ou id) */
 const ENTRY_SECTIONS=['workoutLog','foodLog','exoState','sessionPlan','customExos'];
 let IS_FIRST_RUN=false;try{IS_FIRST_RUN=!localStorage.getItem('ectomass_v2')}catch(e){}
@@ -1152,7 +1184,54 @@ const EX={
     cue:"Amplitude complète, pause en bas comme en haut.",
     setup:"Assis, genoux fléchis à 90° sous la charge, pointes de pieds sur la cale, talons dans le vide.",
     exec:"Descends les talons jusqu'à l'étirement complet, marque 2 secondes, puis monte sur la pointe et marque la contraction.",
-    err:"Rebondir, amplitude écourtée, aller trop vite.",alt:"Mollets debout, presse à mollets, mollets un pied"}
+    err:"Rebondir, amplitude écourtée, aller trop vite.",alt:"Mollets debout, presse à mollets, mollets un pied"},
+  /* ---- Lot Split : variantes par groupe musculaire (angles et prises
+     tirés du Guide des mouvements de Delavier) ---- */
+  dcserre:{n:"Développé couché prise serrée",role:'U',rep:[6,10],rest:120,tempo:"3-0-1",warm:true,m:["Triceps","Pectoraux","Épaules"],cue:"Mains à 20-30 cm, coudes près du corps : ce sont les triceps qui poussent.",
+    setup:"Allongé comme au développé couché, fessiers sur le banc. Mains écartées de 20 à 30 cm selon la souplesse des poignets.",
+    exec:"Descends la barre sur le bas des pecs en gardant les coudes près du corps, puis pousse jusqu'à l'extension sans claquer les coudes.",
+    err:"Mains trop serrées (poignets douloureux), coudes qui s'ouvrent, rebond sur la poitrine.",alt:"Dips, développé haltères prise neutre, pompes mains serrées"},
+  barrefront:{n:"Barre au front",role:'I',rep:[8,12],rest:75,tempo:"3-0-1",m:["Triceps"],cue:"Les bras restent fixes, seuls les avant-bras bougent.",
+    setup:"Allongé sur un banc plat, barre EZ tenue bras tendus au-dessus des épaules, mains en pronation.",
+    exec:"Plie les coudes pour amener la barre vers le front (ou juste derrière la tête pour étirer le chef long), puis tends les bras sans bouger les coudes.",
+    err:"Coudes qui s'écartent, bras qui basculent, charge trop lourde pour les coudes.",alt:"Extension couché haltères, extension triceps au-dessus de la tête"},
+  curlpupitre:{n:"Curl pupitre (Larry Scott)",role:'I',rep:[8,12],rest:60,tempo:"3-0-1",m:["Biceps","Brachial"],cue:"Bras calés sur le pupitre : impossible de tricher.",
+    setup:"Assis, le dessous des bras à plat sur le pupitre, aisselles contre le haut du coussin, barre EZ ou haltère en supination.",
+    exec:"Monte la charge en fléchissant les coudes, serre en haut, redescends lentement sans verrouiller bras tendus en bas.",
+    err:"Coudes qui décollent, descente lâchée, bras complètement tendus en bas (tendons en tension maximale).",alt:"Curl concentré, curl poulie basse"},
+  curlconcentre:{n:"Curl concentré",role:'I',rep:[10,12],rest:60,tempo:"2-1-2",m:["Biceps","Brachial"],cue:"Coude calé contre l'intérieur de la cuisse, serre 1 s en haut.",
+    setup:"Assis au bout du banc, buste penché, coude du bras qui travaille calé contre l'intérieur de la cuisse, haltère bras tendu.",
+    exec:"Fléchis le coude en tournant légèrement le petit doigt vers le haut, contracte 1 s, redescends sous contrôle.",
+    err:"Balancer le buste, décoller le coude de la cuisse, remonter trop vite.",alt:"Curl pupitre, curl poulie basse un bras"},
+  curlinverse:{n:"Curl prise pronation",role:'I',rep:[10,12],rest:60,tempo:"2-0-2",m:["Brachial","Avant-bras","Biceps"],cue:"Paumes vers le bas, coudes collés au corps.",
+    setup:"Debout, barre (EZ si les poignets tirent) tenue mains en pronation, largeur d'épaules.",
+    exec:"Monte la barre en fléchissant les coudes sans les avancer, redescends lentement.",
+    err:"Poignets qui cassent, élan du buste, coudes qui partent devant.",alt:"Curl marteau, curl marteau à la corde"},
+  legext:{n:"Leg extension",role:'I',rep:[10,15],rest:60,tempo:"2-1-2",m:["Quadriceps"],cue:"Tends les jambes, serre 1 s, redescends lentement.",
+    setup:"Assis au fond du siège, genoux dans l'axe de la machine, boudin sur le bas des tibias, mains sur les poignées.",
+    exec:"Tends les jambes jusqu'à l'extension complète, marque la contraction, redescends sans laisser tomber la charge.",
+    err:"Fessiers qui décollent, élan, descente trop rapide.",alt:"Squat bulgare, sissy squat"},
+  hacksquat:{n:"Hack squat",role:'L',rep:[8,10],rest:120,tempo:"3-0-1",warm:true,m:["Quadriceps","Fessiers"],
+    morpho:{seg:'femurs',val:'long',lvl:'good',txt:"Fémurs longs : le dossier tient le dos, tu descends profond sans que les lombaires prennent le relais."},cue:"Dos plaqué, abdos serrés, descends profond.",
+    setup:"Dos contre le dossier, épaules sous les boudins, pieds moyennement écartés au milieu de la plateforme.",
+    exec:"Débloque la sécurité, fléchis les jambes jusqu'à cuisses parallèles ou plus bas, puis pousse dans les talons.",
+    err:"Bassin qui décolle du dossier, genoux qui rentrent, abdos relâchés.",alt:"Presse à cuisses, squat avant"},
+  tiragehoriz:{n:"Tirage horizontal poulie",role:'U',rep:[10,12],rest:90,tempo:"2-1-2",m:["Dos","Biceps","Trapèzes"],cue:"Poitrine sortie, tire les coudes vers les hanches.",
+    setup:"Assis face à la poulie basse, pieds sur les cales, genoux légèrement fléchis, poignée triangle.",
+    exec:"Tire la poignée vers le bas du ventre en serrant les omoplates, marque 1 s, puis laisse les bras s'allonger en étirant le dos.",
+    err:"Se jeter en arrière pour tirer, dos rond au retour, épaules qui montent.",alt:"Rowing haltère, rowing barre"},
+  ecartepoulie:{n:"Écarté poulie vis-à-vis",role:'I',rep:[12,15],rest:60,tempo:"2-1-2",m:["Pectoraux"],cue:"Coudes légèrement fléchis, rapproche les mains comme pour enlacer.",
+    setup:"Debout entre deux poulies hautes, une poignée dans chaque main, un pied en avant, buste légèrement penché.",
+    exec:"Ramène les mains l'une vers l'autre devant le bas des pecs, serre 1 s, puis ouvre lentement jusqu'à l'étirement. Poulies basses pour cibler le haut des pecs.",
+    err:"Plier les coudes (ça devient un développé), ouvrir trop loin derrière, se servir du buste.",alt:"Écarté haltères, pec deck"},
+  pullover:{n:"Pull-over haltère",role:'I',rep:[10,12],rest:75,tempo:"3-0-2",m:["Dos (grand dorsal)","Pectoraux","Triceps"],cue:"Bras presque tendus, grande amplitude derrière la tête.",
+    setup:"Allongé sur un banc, un haltère tenu à deux mains au-dessus de la poitrine, bras légèrement fléchis.",
+    exec:"Descends l'haltère derrière la tête, coudes fixes, jusqu'à l'étirement, puis ramène-le au-dessus de la poitrine.",
+    err:"Plier les coudes pendant le mouvement, cambrer fort, charger trop lourd.",alt:"Pull-over poulie haute bras tendus"},
+  facepull:{n:"Face pull",role:'I',rep:[12,15],rest:60,tempo:"2-1-2",m:["Épaules (deltoïde postérieur)","Trapèzes"],cue:"Tire la corde vers le front, coudes hauts.",
+    setup:"Poulie à hauteur du visage, corde tenue mains en pronation, un pas en arrière, bras tendus.",
+    exec:"Tire la corde vers le front en écartant les mains et en montant les coudes, serre l'arrière des épaules 1 s, reviens lentement.",
+    err:"Basculer en arrière pour tirer, coudes trop bas (ça devient un rowing), charge trop lourde.",alt:"Oiseau haltères, oiseau poulie"}
 };
 /* ---------------- ILLUSTRATIONS D'EXERCICES ----------------
    Chaque exercice est dessiné en SVG dans un repère 64×64 : silhouette de
@@ -1306,6 +1385,45 @@ const ART=(()=>{
       +body([25,47],[35,53],[45,45],[50,56])+body([25,47],[25,40],[21,36])
       +head(20,42),
 
+    /* ---- Lot Split ---- */
+    dcserre:floor+bench(12,50,38)
+      +body([26,34],[40,34],[48,42],[50,56])+far([26,34],[28,27],[29,22])
+      +body([26,34],[25,27],[27,22])+head(19,33)+barbell(15,39,21,12),
+    barrefront:floor+bench(12,50,38)
+      +body([26,34],[40,34],[48,42],[50,56])+far([26,34],[28,23],[21,19])
+      +body([26,34],[26,23],[19,19])+head(19,33)+barbell(11,27,19,9),
+    curlpupitre:floor+pad([30,31],[44,42])+frame([41,42],[41,57])
+      +body([22,40],[22,22])+body([22,40],[34,44],[35,57])
+      +body([22,23],[33,34],[40,26])+head(22,15)+db(41,25),
+    curlconcentre:floor+bench(8,36,44)
+      +body([20,44],[29,27])+body([20,44],[38,44],[40,57])+far([20,44],[34,46],[35,57])
+      +body([29,28],[33,42],[40,34])+head(33,21)+db(41,33),
+    curlinverse:floor+body([30,20],[30,34],[30,46],[31,57])
+      +far([30,20],[27,28],[26,35])+body([30,20],[30,28],[38,25])
+      +head(30,13)+barbell(35,47,24,9),
+    legext:floor+pad([12,44],[30,44])+pad([12,44],[10,24])+frame([20,45],[20,57])
+      +body([15,42],[14,25])+body([15,42],[31,42],[47,38])+far([15,42],[31,43],[32,55])
+      +body([14,27],[18,35],[22,42])+head(15,18)+wheel(48,40,3),
+    hacksquat:floor+pad([16,54],[32,14])+pad([31,17],[37,20])
+      +far([25,36],[36,41],[32,56])
+      +body([31,21],[25,36],[38,42],[34,56])+body([31,21],[35,24],[35,19])
+      +head(35,13),
+    tiragehoriz:floor+pad([8,50],[26,50])+frame([14,51],[14,57])+box(46,42,5,14)
+      +body([19,48],[19,30])+body([19,48],[34,46],[45,48])+far([19,48],[33,47],[45,51])
+      +body([19,32],[12,37],[23,38])+head(20,23)
+      +frame([23,38],[54,41])+wheel(55,41,2.5),
+    ecartepoulie:frame([8,6],[8,57])+frame([56,6],[56,57])+wheel(8,8,2.5)+wheel(56,8,2.5)
+      +floor+frame([10,9],[29,34])+frame([54,9],[35,34])
+      +body([32,19],[32,36],[28,47],[27,57])+far([32,36],[36,47],[37,57])
+      +body([32,20],[23,26],[29,34])+body([32,20],[41,26],[35,34])+head(32,12),
+    pullover:floor+bench(16,48,40)
+      +body([26,37],[40,37],[48,45],[50,56])+far([26,37],[17,34],[9,32])
+      +body([26,37],[17,33],[8,31])+head(20,36)+dbv(7,30),
+    facepull:floor+frame([54,6],[54,57])+wheel(54,17,2.5)
+      +body([28,20],[28,36],[31,47],[32,57])+far([28,36],[25,47],[24,57])
+      +far([28,21],[20,18],[31,14])+body([28,21],[21,16],[32,15])+head(28,12)
+      +frame([32,15],[53,17]),
+
     /* exercice personnalisé : silhouette générique */
     _:floor+body([31,21],[31,35],[31,46],[32,57])
       +far([31,21],[33,28],[34,35])+body([31,21],[29,28],[28,35])
@@ -1337,13 +1455,22 @@ const SESSIONS={
   E:{name:"Séance E — Chaîne postérieure & tirage",tip:"Le roumain et le leg curl couvrent les deux fonctions des ischios. Prise neutre au tirage pour épargner l'épaule.",
      exos:["rdl","legcurl","tiragenut","rowbarre","oiseau","curlincline","gainage"]},
   F:{name:"Séance F — Volume & finition",tip:"Buste vertical au squat avant, unilatéral aux fentes, puis étirement sur les bras et les mollets. Pas la place de marcher en salle ? Échange les fentes contre le split squat ou les montées sur banc.",
-     exos:["frontsquat","fentes","dcinc","elevlat","tricepsnuque","molletsassis","crunch"]}
+     exos:["frontsquat","fentes","dcinc","elevlat","tricepsnuque","molletsassis","crunch"]},
+  /* Bloc Split : un groupe musculaire par séance. La composition réelle vient
+     de SPLIT_DAYS (variantes A/B en rotation) ; `exos` ne sert que de repli. */
+  PD:{name:"Pecs & Dos",short:"Pecs-Dos",tip:"Pecs et dos se reposent pendant que l'autre travaille : pousse lourd, tire lourd, puis finition. Le rappel bras en fin de séance garde tes bras à 2 passages par semaine.",
+     exos:["dc","traction","dcinc","rowbarre","ecarte"]},
+  JA:{name:"Jambes",short:"Jambes",tip:"Point faible : chaque exercice de jambes a une série de plus. Composé lourd d'abord, puis unilatéral et isolation. Genoux dans l'axe, amplitude complète.",
+     exos:["squat","rdl","bulgare","legext","mollets"]},
+  BR:{name:"Bras",short:"Bras",tip:"Point faible : une série de plus sur chaque exercice. Triceps et biceps alternés pour que l'un récupère pendant que l'autre travaille. Chaque variante change l'angle : bras étiré, bras calé, prise neutre.",
+     exos:["dcserre","curl","barrefront","curlincline","triceps","marteau"]}
 };
 /* Deux blocs de trois séances : on en suit un à la fois. Six séances dans la
    même semaine n'aurait aucun sens pour une morphologie qui récupère mal. */
 const PROGRAMS={
   fondation:{n:"Fondation",desc:"Barres libres, 3 séances full-body. La base pour apprendre les mouvements.",s:['A','B','C']},
-  morpho:{n:"Morpho",desc:"Exercices choisis pour segments longs, volume jambes doublé.",s:['D','E','F']}
+  morpho:{n:"Morpho",desc:"Exercices choisis pour segments longs, volume jambes doublé.",s:['D','E','F']},
+  split:{n:"Split",desc:"Un groupe musculaire par séance : Pecs-Dos, Jambes, Bras, épaules au choix. Deux variantes en rotation, une série de plus sur tes points faibles.",s:['PD','JA','BR']}
 };
 function progKey(){return PROGRAMS[DB.program]?DB.program:'fondation'}
 function progSessions(){return PROGRAMS[progKey()].s}
@@ -1405,9 +1532,163 @@ function e1rm(w,r){return r>0?Math.round(w*(1+r/30)):w}
 // exercise resolution (built-in + custom) & flexible session composition
 function exDef(id){return EX[id]||(DB.customExos&&DB.customExos[id])||{n:id,role:'I',rep:[8,12],rest:60,m:['Personnalisé'],cue:'Exercice personnalisé.',tempo:'—',setup:'—',exec:'—',err:'—',alt:'—'}}
 function exLibrary(){return Object.assign({},EX,DB.customExos||{})}
-function sessionExos(s){const p=DB.sessionPlan&&DB.sessionPlan[s];return (p&&p.length)?p.filter(id=>EX[id]||(DB.customExos||{})[id]):SESSIONS[s].exos.slice()}
+function sessionExos(s){const p=DB.sessionPlan&&DB.sessionPlan[s];return (p&&p.length)?p.filter(id=>EX[id]||(DB.customExos||{})[id]):defaultExos(s)}
 function setSessionExos(s,arr){if(!DB.sessionPlan)DB.sessionPlan={};DB.sessionPlan[s]=arr;save()}
 function isCustomSession(s){return !!(DB.sessionPlan&&DB.sessionPlan[s]&&DB.sessionPlan[s].length)}
+
+/* ---------------- SPLIT PAR GROUPES MUSCULAIRES ----------------
+   Principes appliqués (volume hebdo 10-20 séries par muscle, points faibles
+   dans le haut de la fourchette, fréquence 2×/sem pour ce qu'on veut
+   rattraper) :
+   - deux variantes A/B par séance, qui alternent d'une fois sur l'autre :
+     mêmes muscles, autres angles et prises. Chaque exercice revient une
+     séance sur deux, assez souvent pour que la double progression marche ;
+   - un point faible gagne une série sur chaque exercice qui le cible ;
+   - rappel : 1 exercice léger du point faible dans une autre séance, pour
+     le toucher deux fois par semaine sans rajouter une séance ;
+   - les épaules se greffent sur Bras (développé + latérales) ou sur Jambes
+     (isolation seulement : pas de développé lourd après les squats). */
+const SPLIT_GROUPS={bras:'Bras',jambes:'Jambes',pecs:'Pecs',dos:'Dos',epaules:'Épaules'};
+const SPLIT_DAYS={
+  PD:{g:['pecs','dos'],v:[
+      ['dc','traction','dcinc','rowbarre','ecarte'],
+      ['dchalt','tiragenut','dips','tiragehoriz','ecartepoulie']],
+    rappel:{bras:['tricepsnuque','curlincline']},abs:['gainage','crunch']},
+  JA:{g:['jambes'],v:[
+      ['squat','rdl','bulgare','legext','mollets'],
+      ['presse','hipthrust','fenteshalt','legcurl','molletsassis']],
+    epaules:[['elevlat','oiseau'],['elevlat','facepull']],abs:['crunch','gainage']},
+  BR:{g:['bras'],v:[
+      ['dcserre','curl','barrefront','curlincline','triceps','marteau'],
+      ['dips','curlpupitre','tricepsnuque','curlconcentre','triceps','curlinverse']],
+    epaules:[['ohp','elevlat'],['dvepaules','elevlat']],
+    rappel:{jambes:['legcurl','legext']}}
+};
+const MUSCLE_GRP={Biceps:'bras',Triceps:'bras',Brachial:'bras','Avant-bras':'bras',Quadriceps:'jambes',Ischios:'jambes',Fessiers:'jambes',Mollets:'jambes',Lombaires:'jambes',Pectoraux:'pecs',Dos:'dos','Trapèzes':'dos','Épaules':'epaules',Abdos:'abdos',Transverse:'abdos'};
+function exoGroup(id){const m=(exDef(id).m||[])[0];return MUSCLE_GRP[muscleGroup(m||'')]||'autre'}
+function splitCfg(){const c=DB.split||{};
+  return {weak:Array.isArray(c.weak)?c.weak.filter(g=>SPLIT_GROUPS[g]):['bras','jambes'],
+    shoulders:['BR','JA','none'].includes(c.shoulders)?c.shoulders:'BR',rappel:c.rappel!==false}}
+/* séances de ce type déjà faites avant aujourd'hui : rouvrir la séance du jour
+   ne fait pas tourner la variante */
+function splitRot(s){const t=todayKey();return Object.keys(DB.workoutLog).filter(k=>k<t&&DB.workoutLog[k]&&DB.workoutLog[k].session===s).length}
+function splitVariant(s){const D=SPLIT_DAYS[s];if(!D)return 0;
+  const L=DB.workoutLog[todayKey()];
+  if(L&&L.session===s&&L.v!=null&&D.v[L.v])return L.v;
+  return splitRot(s)%D.v.length}
+function variantName(i){return String.fromCharCode(65+i)}
+function splitPlan(s,vi){
+  const D=SPLIT_DAYS[s];if(!D)return [];
+  const c=splitCfg();if(vi==null)vi=splitVariant(s);
+  const withSh=c.shoulders===s&&!!D.epaules,out=[],seen=new Set();
+  const push=(id,kind,g)=>{if(!seen.has(id)&&EX[id]){seen.add(id);out.push({id,kind,g})}};
+  let main=D.v[vi%D.v.length].slice();
+  /* épaules le jour des bras : on laisse tomber le 6e exercice (brachial),
+     sinon la séance dépasse 25 séries */
+  if(withSh&&main.length>5)main=main.slice(0,5);
+  main.forEach(id=>{const g=exoGroup(id);push(id,'main',D.g.includes(g)?g:D.g[0])});
+  if(withSh)D.epaules[vi%D.epaules.length].forEach(id=>push(id,'epaules','epaules'));
+  if(c.rappel&&D.rappel&&!withSh)Object.keys(D.rappel).forEach(g=>{if(c.weak.includes(g))push(D.rappel[g][vi%D.rappel[g].length],'rappel',g)});
+  if(D.abs&&!withSh)push(D.abs[vi%D.abs.length],'abdos','abdos');
+  return out;
+}
+function defaultExos(s){return SPLIT_DAYS[s]?splitPlan(s).map(x=>x.id):SESSIONS[s].exos.slice()}
+/* séries d'une ligne de séance : le barème de la semaine, puis +1 sur un point
+   faible, et un rappel reste léger (une série de moins) */
+function setsFor(s,id,wk){
+  const base=targetSets(id,wk);
+  if(!SPLIT_DAYS[s])return base;
+  const it=splitPlan(s).find(x=>x.id===id);
+  const kind=it?it.kind:'main',g=it?it.g:exoGroup(id);
+  if(kind==='rappel')return clamp(base-1,2,5);
+  if(kind!=='abdos'&&splitCfg().weak.includes(g))return clamp(base+1,2,5);
+  return base;
+}
+function splitKind(s,id){const it=SPLIT_DAYS[s]?splitPlan(s).find(x=>x.id===id):null;return it||null}
+function setSplit(field,val){
+  const c=splitCfg();
+  if(field==='weak'){const w=new Set(c.weak);w.has(val)?w.delete(val):w.add(val);c.weak=Object.keys(SPLIT_GROUPS).filter(g=>w.has(g))}
+  else if(field==='shoulders'){if(!['BR','JA','none'].includes(val))return;c.shoulders=val}
+  else if(field==='rappel')c.rappel=!c.rappel;
+  DB.split=c;save();
+  renderProgPick();renderExos();renderHome();
+  toast(field==='shoulders'?(val==='none'?'Épaules retirées du split':'Épaules le jour « '+SESSIONS[val].short+' »')
+    :field==='rappel'?(c.rappel?'Rappel points faibles activé':'Rappel points faibles désactivé')
+    :'Points faibles : '+(c.weak.map(g=>SPLIT_GROUPS[g]).join(', ')||'aucun'));
+}
+function splitPanelHTML(){
+  const c=splitCfg();
+  const chip=(attr,val,on,label)=>`<button type="button" class="chip ${on?'on':''}" ${attr}="${val}" aria-pressed="${on}">${label}</button>`;
+  return `<div class="split-panel">
+    <div class="small"><b>Points faibles</b> — une série de plus sur ces groupes. Bras et jambes ont en plus un rappel léger dans une autre séance.</div>
+    <div class="row wrap" style="gap:6px;margin:6px 0 10px">${Object.keys(SPLIT_GROUPS).map(g=>chip('data-split-weak',g,c.weak.includes(g),SPLIT_GROUPS[g])).join('')}</div>
+    <div class="small"><b>Épaules</b> — greffées sur une séance</div>
+    <div class="row wrap" style="gap:6px;margin:6px 0 10px">${chip('data-split-sh','BR',c.shoulders==='BR','avec Bras')}${chip('data-split-sh','JA',c.shoulders==='JA','avec Jambes')}${chip('data-split-sh','none',c.shoulders==='none','sans')}</div>
+    ${chip('data-split-rappel','1',c.rappel,c.rappel?'✓ Rappel points faibles':'Rappel points faibles désactivé')}
+  </div>`;
+}
+function splitInfoHTML(s){
+  if(!SPLIT_DAYS[s])return '';
+  const D=SPLIT_DAYS[s],vi=splitVariant(s),n=D.v.length,c=splitCfg();
+  const custom=isCustomSession(s);
+  const rot=custom
+    ?'Rotation en pause : tu as modifié cette séance.'
+    :`Variante <b>${variantName(vi)}</b> sur ${n}. La prochaine séance ${esc(SESSIONS[s].short)} passera en variante <b>${variantName((vi+1)%n)}</b> : mêmes muscles, autres exercices.`;
+  const sh=D.epaules?`<div class="row wrap" style="gap:6px;margin-top:8px"><span class="small" style="align-self:center">Épaules :</span>
+      <button type="button" class="chip ${c.shoulders==='BR'?'on':''}" data-split-sh="BR" aria-pressed="${c.shoulders==='BR'}">avec Bras</button>
+      <button type="button" class="chip ${c.shoulders==='JA'?'on':''}" data-split-sh="JA" aria-pressed="${c.shoulders==='JA'}">avec Jambes</button>
+      <button type="button" class="chip ${c.shoulders==='none'?'on':''}" data-split-sh="none" aria-pressed="${c.shoulders==='none'}">sans</button></div>`:'';
+  return `<div class="split-info small">🔄 ${rot}</div>${sh}`;
+}
+function sessName(s){const S=SESSIONS[s];return S&&S.short?S.short:s}
+function sessLabel(s){const S=SESSIONS[s];return S&&S.short?S.short:'Séance '+s}
+
+/* ---------------- TRACE DE PROGRESSION ----------------
+   Meilleure série de chaque séance (charge la plus haute, puis le plus de
+   reps à cette charge), toutes séances confondues : dans le split un même
+   exercice passe d'une variante à l'autre, la trace doit le suivre. */
+function exoHistory(id,withToday){
+  const t=todayKey();
+  return Object.keys(DB.workoutLog).filter(k=>withToday?k<=t:k<t).sort().map(k=>{
+    const L=DB.workoutLog[k],arr=L&&L.exos&&L.exos[id];if(!arr)return null;
+    const work=arr.filter(x=>!x.warm&&(x.r||0)>0);if(!work.length)return null;
+    const top=work.reduce((a,x)=>((x.w||0)>(a.w||0)||((x.w||0)===(a.w||0)&&x.r>a.r))?x:a,work[0]);
+    return {date:k,sets:arr,w:top.w||0,r:top.r,e1:Math.max(...work.map(x=>e1rm(x.w||0,x.r)))};
+  }).filter(Boolean);
+}
+function lastExoSets(id){const h=exoHistory(id,false);return h.length?h[h.length-1].sets:null}
+/* stagnation : 3 dernières séances sans battre le meilleur 1RM estimé d'avant */
+function exoStalled(h){if(h.length<4)return false;const before=Math.max(...h.slice(0,-3).map(x=>x.e1));return h.slice(-3).every(x=>x.e1<=before)}
+function exoMargin(id,withToday){
+  const h=exoHistory(id,withToday);if(!h.length)return null;
+  const f=h[0],l=h[h.length-1],p=h.length>1?h[h.length-2]:null;
+  return {n:h.length,first:f,last:l,prev:p,dW:R(l.w-f.w,1),pct:f.w>0?Math.round((l.w-f.w)/f.w*100):null,
+    dE:l.e1-f.e1,step:p?R(l.w-p.w,1):null,stepE:p?l.e1-p.e1:null,stalled:exoStalled(h),hist:h};
+}
+const sgn=(v,d)=>(v>0?'+':v<0?'−':'±')+R(Math.abs(v),d==null?1:d);
+const fmtKg=v=>String(v);
+function dShort(k){return new Date(k+'T00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'}).replace('.','')}
+function progTrailHTML(id){
+  const e=exDef(id);if(e.time)return '';
+  const m=exoMargin(id,false);
+  if(!m)return `<div class="progbox"><b>📈 Ta progression</b><div class="small muted" style="margin-top:3px">Première fois : note ta charge, l'évolution s'affichera ici dès la prochaine séance.</div></div>`;
+  const cls=m.dW>0?'up':m.dW<0?'down':'';
+  const trail=m.hist.slice(-5).map(x=>`<span class="pchip">${esc(dShort(x.date))} · <b>${fmtKg(x.w)}</b>×${x.r}</span>`).join('<span class="parr">›</span>');
+  const since=m.n>1?`<span class="pdelta ${cls}">${sgn(m.dW)} kg${m.pct!=null&&m.first.w>0?' ('+sgn(m.pct,0)+' %)':''}</span>`:'';
+  return `<div class="progbox">
+    <div class="between" style="gap:8px"><b>📈 Ta progression</b>${since}</div>
+    <div class="ptrail">${trail}</div>
+    <div class="small muted">${m.n>1?'Depuis le '+esc(fmtDate(m.first.date))+' · 1RM estimé '+m.first.e1+' → '+m.last.e1+' kg ('+sgn(m.dE,0)+')':'Une séance enregistrée, bats-la aujourd\'hui.'} · ${m.n} séance${m.n>1?'s':''}</div>
+    ${m.stalled?`<div class="small" style="color:var(--amber);margin-top:4px">⏸ Pas de progrès sur les 3 dernières séances. Vérifie d'abord le surplus et le sommeil ; sinon garde la charge et gagne une rep par série avant de remonter, ou change d'exercice (↔ Échanger).</div>`:''}
+  </div>`;
+}
+/* en-tête replié : l'écart avec la séance précédente, d'un coup d'œil */
+function stepBadge(id){
+  const m=exoMargin(id,false);if(!m||m.step==null||exDef(id).time)return '';
+  if(m.step>0)return ` <span class="pdelta up">▲ ${sgn(m.step)} kg</span>`;
+  if(m.step<0)return ` <span class="pdelta down">▼ ${sgn(m.step)} kg</span>`;
+  return m.stepE>0?' <span class="pdelta up">▲ reps</span>':'';
+}
 
 /* ---------------- FOOD BANK (no fish/seafood) ---------------- */
 // ingredients: [name, qty, k, p, c, f]
@@ -1609,12 +1890,13 @@ function renderHome(){
   $('#home-w-tag').textContent=WEEKS[wk].deload?'Deload':'Semaine '+(wk+1);
   const tags=[];
   if(doneLetters.has(shown))tags.push('<span class="tag" style="color:var(--green)">✓ déjà faite</span>');
-  if(!isReco&&!allDone)tags.push(`<span class="tag" style="color:var(--accent2)">conseillée : ${esc(next)}</span>`);
+  if(!isReco&&!allDone)tags.push(`<span class="tag" style="color:var(--accent2)">conseillée : ${esc(sessName(next))}</span>`);
+  if(SPLIT_DAYS[shown]&&!isCustomSession(shown))tags.push(`<span class="tag">variante ${variantName(splitVariant(shown))}</span>`);
   if(allDone)tags.push('<span class="tag" style="color:var(--green)">semaine terminée</span>');
   $('#home-w-name').innerHTML=esc(SESSIONS[shown].name)
     +(tags.length?`<div class="row wrap" style="gap:5px;margin-top:5px">${tags.join('')}</div>`:'');
-  $('#home-workout').innerHTML=sessionExos(shown).slice(0,4).map(id=>`<div class="between" style="padding:4px 0"><span>${esc(exDef(id).n)}</span><span class="small mono">${targetSets(id,wk)}×${exDef(id).rep[1]?targetReps(id,wk):'—'}</span></div>`).join('')
-    +`<button class="btn sm" style="width:100%;margin-top:10px" data-start-session="${esc(shown)}">${doneLetters.has(shown)?'Refaire la séance '+esc(shown):'Démarrer la séance '+esc(shown)} →</button>`;
+  $('#home-workout').innerHTML=sessionExos(shown).slice(0,4).map(id=>`<div class="between" style="padding:4px 0"><span>${esc(exDef(id).n)}</span><span class="small mono">${setsFor(shown,id,wk)}×${exDef(id).rep[1]?targetReps(id,wk):'—'}</span></div>`).join('')
+    +`<button class="btn sm" style="width:100%;margin-top:10px" data-start-session="${esc(shown)}">${doneLetters.has(shown)?'Refaire la séance '+esc(sessName(shown)):'Démarrer la séance '+esc(sessName(shown))} →</button>`;
   /* prévisualisation d'une autre semaine : visible ici aussi, et annulable d'un geste */
   const pb=$('#home-preview');
   if(pb){
@@ -1628,7 +1910,7 @@ function renderHome(){
   $('#week-badges').innerHTML=act.map(w=>{
     const done=doneLetters.has(w),sel=(w===shown),reco=(w===next&&!allDone);
     return `<button type="button" class="wkbox ${done?'done':''} ${sel?'on':''}" style="width:auto;flex:1" data-pick-session="${w}" aria-pressed="${sel}"
-      aria-label="Séance ${w}${done?', déjà faite cette semaine':', à faire'}${reco?', conseillée':''}${sel?', sélectionnée':''}"><b>${w}${reco?' •':''}</b><small>${done?'✓ fait':'à faire'}</small></button>`}).join('');
+      aria-label="${esc(sessLabel(w))}${done?', déjà faite cette semaine':', à faire'}${reco?', conseillée':''}${sel?', sélectionnée':''}"><b>${esc(sessName(w))}${reco?' •':''}</b><small>${done?'✓ fait':'à faire'}</small></button>`}).join('');
   const vol=weekWorkoutsDone().reduce((a,k)=>a+sessionVolume(DB.workoutLog[k]),0);
   $('#week-vol').textContent=doneThisWeek()+'/'+act.length+' · '+R(vol)+' kg';
   const wl2=$('#week-legend');if(wl2)wl2.textContent=allDone?'Les trois séances sont faites — repos ou reprise libre.':'Touche une séance pour l\'ouvrir. Le point marque celle conseillée.';
@@ -1728,7 +2010,7 @@ function selectSession(s){
 function renderSessionSeg(){
   const box=$('#session-seg');if(!box)return;
   box.innerHTML=progSessions().map(s=>{const on=s===currentSession;
-    return `<button role="tab" aria-selected="${on}" ${on?'class="on"':'tabindex="-1"'} data-s="${s}">Séance ${s}</button>`}).join('');
+    return `<button role="tab" aria-selected="${on}" ${on?'class="on"':'tabindex="-1"'} data-s="${s}">${esc(sessLabel(s))}</button>`}).join('');
   syncTabs('#session-seg');
 }
 function renderProgPick(){
@@ -1736,7 +2018,7 @@ function renderProgPick(){
   const cur=progKey();
   box.innerHTML=`<div class="seg" role="group" aria-label="Bloc d'entraînement">${Object.keys(PROGRAMS).map(k=>
     `<button type="button" ${k===cur?'class="on"':''} data-prog="${k}" aria-pressed="${k===cur}">${esc(PROGRAMS[k].n)}</button>`).join('')}</div>
-    <div class="small muted" style="margin-top:6px">${esc(PROGRAMS[cur].desc)}</div>`;
+    <div class="small muted" style="margin-top:6px">${esc(PROGRAMS[cur].desc)}</div>${cur==='split'?splitPanelHTML():''}`;
 }
 function setProgram(k){
   if(!PROGRAMS[k]||k===progKey())return;
@@ -1804,15 +2086,19 @@ function stepper(input,delta,max,unit){
 function renderExos(){
   const S=SESSIONS[currentSession],wk=currentWeekIdx();const exos=sessionExos(currentSession);
   const edited=isCustomSession(currentSession);
-  $('#session-tip').innerHTML=S.tip+(edited?' <span style="color:var(--amber)">· séance personnalisée</span> <a href="#" onclick="resetSession();return false" style="font-size:12px">réinitialiser</a>':'');
+  $('#session-tip').innerHTML=S.tip+(edited?' <span style="color:var(--amber)">· séance personnalisée</span> <a href="#" onclick="resetSession();return false" style="font-size:12px">réinitialiser</a>':'')+splitInfoHTML(currentSession);
   const last=lastSessionData(currentSession);
   // today's already-logged session (for editing)
   const todayLog=(DB.workoutLog[todayKey()]&&DB.workoutLog[todayKey()].session===currentSession)?DB.workoutLog[todayKey()].exos:null;
+  /* un exercice enregistré aujourd'hui reste affiché même si la composition a
+     changé depuis (épaules déplacées…) : sinon le réenregistrement l'effacerait */
+  if(todayLog)Object.keys(todayLog).forEach(id=>{if(!exos.includes(id))exos.push(id)});
   const draft=draftFor(currentSession);const finishedArr=[];
   $('#exo-list').innerHTML=exos.map((id,idx)=>{
-    const e=exDef(id),tSets=targetSets(id,wk),tReps=targetReps(id,wk),reco=recoWeight(id,wk),prev=last[id];
+    const e=exDef(id),tSets=setsFor(currentSession,id,wk),tReps=targetReps(id,wk),reco=recoWeight(id,wk),prev=last[id]||lastExoSets(id);
+    const sk=splitKind(currentSession,id),weakOn=sk&&sk.kind!=='abdos'&&splitCfg().weak.includes(sk.g);
     const isTime=e.time;const done=todayLog&&todayLog[id];
-    const prevTxt=done?`✅ Fait aujourd'hui — appuie pour modifier`:(prev?`Dernière : ${prev.map(s=>(s.w?s.w+'kg×':'')+s.r+(isTime?'s':'')).join(', ')}`:'Première fois');
+    const prevTxt=done?`✅ Fait aujourd'hui — appuie pour modifier`:(prev?`Dernière : ${prev.map(s=>(s.w?s.w+'kg×':'')+s.r+(isTime?'s':'')).join(', ')}${stepBadge(id)}`:'Première fois');
     const recoTxt=reco!=null?`<div class="reco">✅ Charge conseillée : <b>${reco} kg</b> ${WEEKS[wk].deload?'(deload)':(isComeback()?'· reprise après pause, −10 % pour retrouver le geste':(DB.exoState[id]&&DB.exoState[id].hitTop?'· +'+inc(e.role)+'kg, tu as validé la dernière fois !':'· maintiens et vise le haut des reps'))}</div>`:'';
     // sets: use logged today if present, else target count
     const logged=done?todayLog[id]:null;const dr=draft?draft[id]:null;
@@ -1835,7 +2121,7 @@ function renderExos(){
       <div class="num">${idx+1}</div>
       ${exoArt(id)}
       <div style="flex:1"><b>${esc(e.n)}</b><div class="small prev" style="color:var(--accent2)">${prevTxt}</div>
-        <div class="muscles">${(e.m||[]).map(m=>`<span class="tag">${esc(m)}</span>`).join('')}</div></div>
+        <div class="muscles">${sk&&sk.kind==='rappel'?'<span class="tag kind">🔁 Rappel '+esc(SPLIT_GROUPS[sk.g]||'')+'</span>':weakOn?'<span class="tag kind">🎯 Point faible +1 série</span>':''}${(e.m||[]).map(m=>`<span class="tag">${esc(m)}</span>`).join('')}</div></div>
       <div class="small" style="text-align:right"><span data-st="${idx}"></span><br>${tSets}×${isTime?(tReps||'45')+'s':tReps} · <span class="muted">${e.rest}s</span></div></button>
       <div class="body">
         <div class="row wrap" style="gap:6px;margin-bottom:8px">
@@ -1848,6 +2134,7 @@ function renderExos(){
         ${e.warm?`<div class="warmnote">🔥 <b>Échauffement</b> : 2-3 séries progressives. Appuie sur le n° de série pour la marquer « W » (exclue des PR/volume).</div>`:''}
         ${(()=>{const mn=morphoNote(id);return mn?`<div class="morphonote ${mn.lvl}">${mn.lvl==='good'?'🧬 <b>Adapté à ta morphologie</b>':'🧬 <b>Attention à ta morphologie</b>'} — ${esc(mn.txt)}</div>`:''})()}
         ${recoTxt}
+        ${progTrailHTML(id)}
         <div class="setrow" style="color:var(--muted);font-size:11px"><div class="sn" style="background:none">Série</div><div style="text-align:center">${isTime?'':'Charge'}</div><div style="text-align:center">${isTime?'Secondes':'Reps'}</div><div style="text-align:center">1RM</div><div></div></div>
         ${sets}
         <div class="row" style="gap:8px;margin-top:8px"><button class="btn ghost mini" onclick="addSetRow(this,'${id}')" style="flex:1">＋ Série</button><button class="btn ghost mini" onclick="this.parentElement.nextElementSibling.classList.toggle('show')" style="flex:1">ℹ️ Technique</button></div>
@@ -2016,11 +2303,13 @@ async function saveWorkout(){
   if(!any){toast('Renseigne au moins une série pour enregistrer','warn');return}
   const key=todayKey();const existing=DB.workoutLog[key];
   if(existing&&existing.session!==currentSession){
-    const ok=await askConfirm('Tu as déjà enregistré la séance '+existing.session+" aujourd'hui. La remplacer par la séance "+currentSession+' ?',{title:'Remplacer la séance',ok:'Remplacer',danger:true});
+    const ok=await askConfirm('Tu as déjà enregistré la séance '+sessName(existing.session)+" aujourd'hui. La remplacer par la séance "+sessName(currentSession)+' ?',{title:'Remplacer la séance',ok:'Remplacer',danger:true});
     if(!ok)return;
   }
   const notes=($('#session-notes')&&$('#session-notes').value.trim())||'';
-  DB.workoutLog[key]={session:currentSession,week:wk,exos,rir:collectRir(),notes,ts:Date.now()};clearDraft(currentSession);save();
+  const entry={session:currentSession,week:wk,exos,rir:collectRir(),notes,ts:Date.now()};
+  if(SPLIT_DAYS[currentSession]&&!isCustomSession(currentSession))entry.v=splitVariant(currentSession);
+  DB.workoutLog[key]=entry;clearDraft(currentSession);save();
   stopRest();
   const done=currentSession;
   renderWeekStrip();renderExos();renderHome();renderProgress();
@@ -2424,19 +2713,59 @@ function renderProgress(){
     const st=DB.exoState[currentLift]||{};$('#lift-pr').textContent=st.pr?('PR '+st.pr+' kg'):'';
     $('#lift-stats').innerHTML=`<span class="pill">Meilleur 1RM estimé : <b>${st.best1||'—'} kg</b></span> <span class="pill">PR charge : <b>${st.pr||'—'} kg</b></span>`;}
 
+  renderMargins();
   // PR list
   const prs=Object.keys(DB.exoState).filter(id=>DB.exoState[id].pr).sort((a,b)=>(DB.exoState[b].pr)-(DB.exoState[a].pr));
   $('#pr-list').innerHTML=prs.length?prs.slice(0,8).map(id=>`<div class="between" style="padding:7px 0;border-bottom:1px solid var(--line2)"><span>${esc(exDef(id).n)}</span><b class="mono">${DB.exoState[id].pr} kg</b></div>`).join(''):'<div class="small muted" style="padding:8px 0">Pas encore de record.</div>';
 
   // history
   const hk=Object.keys(DB.workoutLog).sort().reverse();
-  $('#workout-history').innerHTML=hk.length?hk.slice(0,12).map(k=>{const s=DB.workoutLog[k];const nS=Object.values(s.exos).reduce((a,e)=>a+e.length,0);return `<div style="padding:8px 0;border-bottom:1px solid var(--line2)"><div class="between"><div><b>Séance ${esc(s.session)}</b> <span class="small">S${(s.week||0)+1}</span>${s.rir?' <span class="tag">RIR '+esc(s.rir)+'</span>':''}<div class="small">${fmtDate(k)}</div></div><div class="center" style="gap:10px"><div class="small" style="text-align:right">${nS} séries<br><span class="muted mono">${R(sessionVolume(s))} kg</span></div><button class="del" aria-label="Supprimer la séance du ${fmtDate(k)}" data-del-session="${esc(k)}">🗑</button></div></div>${s.notes?`<div class="hist-note">${esc(s.notes)}</div>`:''}</div>`}).join(''):'<div class="small muted" style="padding:8px 0">Aucune séance.</div>';
+  $('#workout-history').innerHTML=hk.length?hk.slice(0,12).map(k=>{const s=DB.workoutLog[k];const nS=Object.values(s.exos).reduce((a,e)=>a+e.length,0);return `<div style="padding:8px 0;border-bottom:1px solid var(--line2)"><div class="between"><div><b>${esc(sessLabel(s.session))}</b>${s.v!=null?' <span class="small">var. '+variantName(s.v)+'</span>':''} <span class="small">S${(s.week||0)+1}</span>${s.rir?' <span class="tag">RIR '+esc(s.rir)+'</span>':''}<div class="small">${fmtDate(k)}</div></div><div class="center" style="gap:10px"><div class="small" style="text-align:right">${nS} séries<br><span class="muted mono">${R(sessionVolume(s))} kg</span></div><button class="del" aria-label="Supprimer la séance du ${fmtDate(k)}" data-del-session="${esc(k)}">🗑</button></div></div>${s.notes?`<div class="hist-note">${esc(s.notes)}</div>`:''}</div>`}).join(''):'<div class="small muted" style="padding:8px 0">Aucune séance.</div>';
 }
 function deleteSession(k){
   const snap=DB.workoutLog[k]?clone(DB.workoutLog[k]):null;if(!snap)return;
   delete DB.workoutLog[k];save();renderProgress();renderHome();renderWeekStrip();
   toast('Séance du '+fmtDate(k)+' supprimée','warn',{label:'Annuler',fn:()=>{DB.workoutLog[k]=snap;save();renderProgress();renderHome();renderWeekStrip()}});}
 function setLift(id){currentLift=id;renderProgress()}
+const SETS_NORM={Brachial:'Biceps','Avant-bras':'Biceps','Trapèzes':'Dos',Lombaires:'Ischios',Transverse:'Abdos'};
+function weeklySets(){
+  const since=todayKey(new Date(Date.now()-6*864e5)),out={};
+  Object.keys(DB.workoutLog).filter(k=>k>=since).forEach(k=>{const L=DB.workoutLog[k];
+    Object.keys(L.exos||{}).forEach(id=>{const n=(L.exos[id]||[]).filter(x=>!x.warm).length;if(!n)return;
+      const seen=new Set();
+      (exDef(id).m||[]).forEach((m,i)=>{let g=muscleGroup(m);g=SETS_NORM[g]||g;if(seen.has(g))return;seen.add(g);out[g]=(out[g]||0)+n*(i===0?1:0.5)})})});
+  return out;
+}
+function renderMargins(){
+  const box=$('#margin-list');if(!box)return;
+  const weak=splitCfg().weak;
+  const ids=[];Object.values(DB.workoutLog).forEach(L=>Object.keys(L.exos||{}).forEach(id=>{if(!ids.includes(id)&&!exDef(id).time)ids.push(id)}));
+  const rows=ids.map(id=>({id,g:exoGroup(id),m:exoMargin(id,true)})).filter(x=>x.m);
+  if(!rows.length){box.innerHTML='<div class="small muted" style="padding:6px 0">Enregistre une séance : chaque exercice aura ici sa charge de départ, sa charge actuelle et l\'écart.</div>';$('#margin-pill').textContent='';}
+  else{
+    const order=g=>(weak.includes(g)?0:1)*10+['bras','jambes','pecs','dos','epaules','abdos','autre'].indexOf(g);
+    rows.sort((a,b)=>order(a.g)-order(b.g)||b.m.dW-a.m.dW);
+    let lastG=null;
+    box.innerHTML=rows.map(({id,g,m})=>{
+      const hd=g!==lastG?`<div class="mgroup">${esc(SPLIT_GROUPS[g]||(g==='abdos'?'Abdos':'Autres'))}${weak.includes(g)?' <span class="tag kind">point faible</span>':''}</div>`:'';lastG=g;
+      const cls=m.dW>0?'up':m.dW<0?'down':'';
+      const trend=m.step==null?'':m.step>0||(m.step===0&&m.stepE>0)?'<span class="pdelta up">▲</span>':m.step<0?'<span class="pdelta down">▼</span>':'<span class="pdelta">＝</span>';
+      return hd+`<div class="mrow"><div class="mname">${esc(exDef(id).n)}${m.stalled?' <span class="tag" style="color:var(--amber)">⏸ stagne</span>':''}<div class="small muted">${m.n} séance${m.n>1?'s':''} · dernière le ${esc(dShort(m.last.date))}</div></div>
+        <div class="mval mono">${fmtKg(m.first.w)} → <b>${fmtKg(m.last.w)}</b> kg ${trend}<div class="pdelta ${cls}">${m.n>1?sgn(m.dW)+' kg'+(m.pct!=null?' · '+sgn(m.pct,0)+' %':''):'1re séance'}</div></div></div>`;
+    }).join('');
+    const up=rows.filter(r=>r.m.dW>0||r.m.dE>0).length;
+    $('#margin-pill').textContent=up+'/'+rows.length+' en progrès';
+  }
+  const sb=$('#sets-list');if(!sb)return;
+  const ws=weeklySets(),mus=Object.keys(ws).filter(m=>m!=='Abdos'&&m!=='Personnalisé').sort((a,b)=>ws[b]-ws[a]);
+  if(!mus.length){sb.innerHTML='<div class="small muted" style="padding:6px 0">Aucune série ces 7 derniers jours.</div>';return}
+  sb.innerHTML=mus.map(m=>{
+    const g=MUSCLE_GRP[m]||'autre',isW=weak.includes(g),lo=isW?14:10,hi=20,v=R(ws[m]*2)/2;
+    const st=v<lo?'low':v>hi?'high':'ok';
+    const note=st==='ok'?'dans la cible':st==='low'?'sous la cible':'au-delà : surveille la récup';
+    return `<div class="setbar ${st}"><div class="between small"><span>${esc(m)}${isW?' <span class="tag kind">point faible</span>':''}</span><span class="mono">${v} / ${lo}-${hi} · ${note}</span></div><div class="mbar"><i style="width:${clamp(v/hi*100,0,100)}%"></i><span class="band" style="left:${lo/hi*100}%"></span></div></div>`;
+  }).join('');
+}
 
 /* ---------------- RENDER: PROFILE ---------------- */
 function renderProfile(){
@@ -2533,6 +2862,13 @@ window.addEventListener('popstate',e=>{
 /* délégation : les deux barres sont reconstruites à chaque changement de bloc */
 $('#session-seg').addEventListener('click',e=>{const b=e.target.closest('button[data-s]');if(b)selectSession(b.dataset.s)});
 $('#prog-pick').addEventListener('click',e=>{const b=e.target.closest('button[data-prog]');if(b)setProgram(b.dataset.prog)});
+/* réglages du split : présents dans le choix du bloc et sous la séance */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-split-weak],[data-split-sh],[data-split-rappel]');if(!b)return;
+  if(b.hasAttribute('data-split-weak'))setSplit('weak',b.dataset.splitWeak);
+  else if(b.hasAttribute('data-split-sh'))setSplit('shoulders',b.dataset.splitSh);
+  else setSplit('rappel');
+});
 renderProgPick();renderSessionSeg();
 $('#save-workout').onclick=saveWorkout;
 (function bindNotes(){
@@ -2779,6 +3115,7 @@ let onbSex='h';
 function openOnboarding(){onbSex=DB.profile.sex||'h';$$('#onb-sex button').forEach(b=>b.classList.toggle('on',b.dataset.v===onbSex));
   if(DB.profileSet){$('#onb-age').value=DB.profile.age;$('#onb-height').value=DB.profile.height;$('#onb-weight').value=DB.profile.weight;
     $('#onb-activity').value=DB.profile.activity;$('#onb-meals').value=DB.profile.meals;$('#onb-surplus').value=DB.profile.surplus}
+  const op=$('#onb-program');if(op)op.value=progKey();
   onbCheck();openModal('#onb-modal');setTimeout(()=>$('#onb-age').focus(),100)}
 $$('#onb-sex button').forEach(b=>b.onclick=()=>{onbSex=b.dataset.v;$$('#onb-sex button').forEach(x=>x.classList.toggle('on',x===b));pressed('#onb-sex button',b);onbCheck()});
 function onbValid(){const h=+$('#onb-height').value,w=+$('#onb-weight').value;
@@ -2802,7 +3139,8 @@ $('#onb-start').onclick=()=>{if(!onbValid()){onbCheck();toast('Renseigne ta tail
   const p=DB.profile;p.sex=onbSex;
   p.age=+$('#onb-age').value||p.age;p.height=+$('#onb-height').value;p.weight=+$('#onb-weight').value;
   p.activity=+$('#onb-activity').value;p.meals=+$('#onb-meals').value;p.surplus=+$('#onb-surplus').value;
-  DB.startDate=todayKey();DB.profileSet=true;save();closeModal('#onb-modal');renderProfile();renderHome();go('home');toast('Profil enregistré 💪')};
+  const op=$('#onb-program');if(op&&PROGRAMS[op.value]&&op.value!==progKey()){DB.program=op.value;currentSession=progSessions()[0];DB.view.session=currentSession}
+  DB.startDate=todayKey();DB.profileSet=true;save();closeModal('#onb-modal');renderProfile();renderProgPick();renderSessionSeg();renderHome();go('home');toast('Profil enregistré 💪')};
 $('#onb-skip').onclick=()=>{DB.startDate=todayKey();save();closeModal('#onb-modal');renderHome()};
 $('#onb-modal').addEventListener('transitionend',()=>{},{once:true});
 

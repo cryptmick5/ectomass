@@ -5,6 +5,8 @@ Application web PWA (installable, hors-ligne) pour la prise de masse en musculat
 ## Fonctionnalités
 - **Profil & calories** : calcul Mifflin-St Jeor → TDEE → surplus, macros (protéines 2 g/kg), onboarding au 1er lancement.
 - **Entraînement** : mésocycle 12 semaines full-body 3×/sem, surcharge progressive adaptative, timer de repos, séries d'échauffement, PR & 1RM estimé, volume par muscle, composition de séance personnalisable (échange/ajout/création d'exercices), calculateur de disques, **illustration de chaque exercice** (silhouettes SVG dessinées dans le fichier, donc hors-ligne et sans licence à suivre).
+- **Split par groupes musculaires** (bloc « Split », à côté de Fondation et Morpho, choisissable dès l'accueil) : séances Pecs-Dos, Jambes, Bras, épaules greffées sur Bras ou sur Jambes (ou retirées). Deux variantes A/B par séance qui alternent automatiquement : mêmes muscles, autres angles et prises (d'après le *Guide des mouvements de musculation* de Delavier). Points faibles réglables (bras et jambes par défaut) : une série de plus sur chaque exercice qui les cible, et un rappel léger dans une autre séance pour les travailler deux fois par semaine. Les blocs Fondation et Morpho restent intacts.
+- **Trace de progression** : chaque exercice affiche ses dernières séances (charge × reps), l'écart depuis le début et avec la fois précédente, et signale une stagnation sur 3 séances. Page Progression : marge de progression par exercice (points faibles en tête) et séries par muscle sur 7 jours face au repère 10-20 séries.
 - **Nutrition** : journal groupé par repas avec portions au gramme éditables, base d'aliments + aliments perso/récents, générateur de menus jour ET semaine (cohérents), liste de courses éditable et copiable, suivi hydratation.
 - **Progression** : courbe de poids avec tendance lissée, graphes 1RM/volume, historique, notes de séance et RIR ressenti.
 - **Sauvegarde & synchro** : export/import JSON + synchronisation multi-appareils via un gist GitHub privé (voir ci-dessous).
@@ -40,9 +42,9 @@ Sur mobile : ouvrir cette URL → menu du navigateur → « Ajouter à l'écran 
 
 ## Tests
 
-`tests.html` charge l'application dans une iframe et rejoue 60 assertions : socle de données,
+`tests.html` charge l'application dans une iframe et rejoue 68 assertions : socle de données,
 fusion multi-appareils, échappement des contenus saisis, suivi de poids, cohérence des chiffres
-affichés, libellés, séance, dialogues, accessibilité, nutrition, profil.
+affichés, libellés, séance, dialogues, accessibilité, nutrition, profil, split par groupes musculaires.
 
 Aucune dépendance, aucun build. Il faut juste servir le dossier en HTTP :
 

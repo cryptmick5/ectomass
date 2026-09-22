@@ -676,6 +676,107 @@ suite('Profil', () => {
 });
 
 /* ============================================================
+   12. Split par groupes musculaires
+   ============================================================ */
+suite('Split par groupes musculaires', () => {
+  /* toutes les combinaisons de réglages, pour chaque séance et variante */
+  function eachPlan(fn) {
+    return ev("(function(){var out=[];['BR','JA','none'].forEach(function(sh){[true,false].forEach(function(rp){"
+      + "[['bras','jambes'],[],['pecs','dos','epaules','bras','jambes']].forEach(function(wk){"
+      + "DB.split={weak:wk,shoulders:sh,rappel:rp};"
+      + "Object.keys(SPLIT_DAYS).forEach(function(s){for(var v=0;v<SPLIT_DAYS[s].v.length;v++){"
+      + "out.push({s:s,v:v,sh:sh,rp:rp,wk:wk.join('+'),p:splitPlan(s,v)})}})})})});"
+      + "DB.split={weak:['bras','jambes'],shoulders:'BR',rappel:true};return out})()");
+  }
+
+  test('le bloc Split propose trois séances nommées', () => {
+    eq(ev("PROGRAMS.split.s.join(',')"), 'PD,JA,BR');
+    eq(ev("PROGRAMS.split.s.map(sessLabel).join(',')"), 'Pecs-Dos,Jambes,Bras');
+  });
+
+  test('chaque exercice du split existe, a son dessin, et aucune séance ne le répète', () => {
+    const plans = eachPlan();
+    ok(plans.length > 0, 'aucune composition');
+    plans.forEach(x => {
+      const ids = x.p.map(i => i.id);
+      eq(new Set(ids).size, ids.length, x.s + ' var.' + x.v + ' contient un doublon');
+      ids.forEach(id => ok(ev("!!EX['" + id + "']&&!!ART['" + id + "']"), id + ' inconnu ou sans dessin'));
+      ok(ids.length >= 5 && ids.length <= 8, x.s + ' : ' + ids.length + ' exercices');
+    });
+  });
+
+  test('les deux variantes d\'une séance changent les exercices', () => {
+    ['PD', 'JA', 'BR'].forEach(s => {
+      const a = ev("SPLIT_DAYS['" + s + "'].v[0].join(',')"), b = ev("SPLIT_DAYS['" + s + "'].v[1].join(',')");
+      ok(a !== b, s + ' : variantes identiques');
+      const shared = a.split(',').filter(id => b.split(',').includes(id)).length;
+      ok(shared <= 1, s + ' : ' + shared + ' exercices communs entre A et B');
+    });
+  });
+
+  test('la variante tourne à chaque séance enregistrée, pas en rouvrant celle du jour', () => {
+    ev("DB.program='split';DB.workoutLog={};save()");
+    eq(ev("splitVariant('BR')"), 0);
+    const a = ev("sessionExos('BR').join(',')");
+    ev("DB.workoutLog['2026-01-05']={session:'BR',week:0,exos:{curl:[{w:12,r:10}]},ts:1};save()");
+    eq(ev("splitVariant('BR')"), 1, 'la séance passée ne fait pas tourner');
+    ok(ev("sessionExos('BR').join(',')") !== a, 'composition inchangée');
+    ev("DB.workoutLog[todayKey()]={session:'BR',week:0,v:1,exos:{curl:[{w:12,r:10}]},ts:2};save()");
+    eq(ev("splitVariant('BR')"), 1, 'la séance du jour ne doit pas tourner tant qu\'on la modifie');
+  });
+
+  test('un point faible gagne une série, un rappel en perd une, toujours entre 2 et 5', () => {
+    ev("DB.workoutLog={};DB.split={weak:['bras','jambes'],shoulders:'BR',rappel:true};save()");
+    eq(ev("setsFor('BR','curl',0)"), ev("targetSets('curl',0)") + 1, 'bras non priorisés');
+    eq(ev("setsFor('PD','dc',0)"), ev("targetSets('dc',0)"), 'les pecs ne sont pas un point faible');
+    eq(ev("setsFor('PD','tricepsnuque',0)"), 2, 'le rappel doit rester léger');
+    const hors = ev("(function(){var h=[];Object.keys(SPLIT_DAYS).forEach(function(s){splitPlan(s,0).concat(splitPlan(s,1)).forEach(function(i){"
+      + "for(var w=0;w<12;w++){var n=setsFor(s,i.id,w);if(n<2||n>5)h.push(s+':'+i.id+':'+n)}})});return h})()");
+    eq(hors.length, 0, hors.slice(0, 3).join(', '));
+  });
+
+  test('les épaules suivent le réglage et le rappel suit les points faibles', () => {
+    const has = (s, id) => ev("splitPlan('" + s + "',0).some(function(i){return i.id==='" + id + "'})");
+    ev("DB.split={weak:['bras','jambes'],shoulders:'BR',rappel:true}");
+    ok(has('BR', 'ohp') && has('BR', 'elevlat'), 'épaules absentes de Bras');
+    ok(!has('JA', 'elevlat'), 'épaules aussi sur Jambes');
+    ev("DB.split.shoulders='JA'");
+    ok(has('JA', 'elevlat') && !has('BR', 'elevlat'), 'épaules non déplacées sur Jambes');
+    ok(!has('JA', 'squat') || !has('JA', 'ohp'), 'développé lourd le jour des squats');
+    ev("DB.split={weak:['jambes'],shoulders:'none',rappel:true}");
+    ok(!has('PD', 'tricepsnuque'), 'rappel bras alors que les bras ne sont plus un point faible');
+    ok(has('BR', 'legcurl'), 'rappel jambes absent');
+    ev("DB.split={weak:['bras','jambes'],shoulders:'BR',rappel:true};save()");
+  });
+
+  test('la trace de progression donne l\'écart par exercice', async () => {
+    ev("DB.program='split';DB.workoutLog={};DB.exoState={};"
+     + "DB.workoutLog['2026-01-05']={session:'BR',week:0,exos:{curl:[{w:10,r:12},{w:12,r:10}]},ts:1};"
+     + "DB.workoutLog['2026-01-12']={session:'BR',week:0,exos:{curl:[{w:14,r:8}]},ts:2};save()");
+    const m = ev("exoMargin('curl',true)");
+    eq(m.first.w, 12); eq(m.last.w, 14); eq(m.dW, 2); eq(m.pct, 17); eq(m.n, 2);
+    ev("selectSession('BR');go('train')"); await wait(120);
+    const box = $$('#exo-list .exo[data-id="curl"] .progbox');
+    ok(box, 'bloc de progression absent de la fiche');
+    match(box.textContent, /\+2 kg/, 'écart non affiché');
+    ev("go('prog')"); await wait(120);
+    match($$('#margin-list').textContent, /Curl biceps/, 'exercice absent de la marge de progression');
+    match($$('#margin-list').textContent, /point faible/, 'points faibles non signalés');
+  });
+
+  test('une séance du split enregistre sa variante et reste lisible dans l\'historique', async () => {
+    ev("DB.workoutLog={};save();selectSession('PD');go('train')"); await wait(120);
+    const row = $$('#exo-list .setrow[data-exo]');
+    row.querySelector('.in-w').value = '60'; row.querySelector('.in-r').value = '8';
+    await ev('saveWorkout()'); await wait(120);
+    ev("closeModal('#summary-modal')");
+    eq(ev("DB.workoutLog[todayKey()].v"), 0, 'variante non enregistrée');
+    ev("go('prog')"); await wait(80);
+    match($$('#workout-history').textContent, /Pecs-Dos/, 'libellé de séance absent');
+  });
+});
+
+/* ============================================================
    Exécution
    ============================================================ */
 const out = document.getElementById('out');
