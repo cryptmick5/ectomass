@@ -777,6 +777,69 @@ suite('Split par groupes musculaires', () => {
 });
 
 /* ============================================================
+   13. Upper/Lower ectomorphe
+   ============================================================ */
+suite('Upper/Lower ectomorphe', () => {
+  test('le bloc propose quatre séances haut/bas nommées', () => {
+    eq(ev("PROGRAMS.ul.s.join(',')"), 'UA,LA,UB,LB');
+    eq(ev("PROGRAMS.ul.s.map(sessLabel).join(',')"), 'Haut A,Bas A,Haut B,Bas B');
+  });
+
+  test('chaque exercice existe, a son dessin et un réglage cohérent', () => {
+    const bad = ev("(function(){var b=[];Object.keys(UL_SPEC).forEach(function(s){"
+      + "if(SESSIONS[s].exos.join(',')!==Object.keys(UL_SPEC[s]).join(','))b.push(s+':ordre');"
+      + "Object.keys(UL_SPEC[s]).forEach(function(id){var p=UL_SPEC[s][id];"
+      + "if(!EX[id]||!ART[id])b.push(id+':inconnu');"
+      + "if(p.sets<2||p.sets>4||p.rep[0]>p.rep[1]||p.rest<60||p.rest>180)b.push(s+':'+id)})});return b})()");
+    eq(bad.length, 0, bad.join(', '));
+  });
+
+  test('séries, reps et repos suivent le tableau, pas les valeurs par défaut', () => {
+    eq(ev("setsFor('LA','squat',0)"), 4, 'squat');
+    eq(ev("setsFor('UA','dc',0)"), 2, 'développé couché secondaire');
+    eq(ev("setsFor('UB','dc',0)"), 4, 'développé couché prioritaire');
+    eq(ev("targetReps('triceps',0,'UA')"), 10, 'triceps 8-10');
+    eq(ev("targetReps('triceps',0,'A')"), 15, 'les autres blocs gardent leur fourchette');
+    eq(ev("targetReps('dc',6,'UB')"), 6, 'jamais sous la fourchette');
+    eq(ev("restFor('LA','squat')"), 180);
+    eq(ev("restFor('A','squat')"), ev("EX.squat.rest"));
+    const hors = ev("(function(){var h=[];Object.keys(UL_SPEC).forEach(function(s){Object.keys(UL_SPEC[s]).forEach(function(id){"
+      + "for(var w=0;w<12;w++){var n=setsFor(s,id,w);if(n<2||n>5)h.push(s+':'+id+':'+n)}})});return h})()");
+    eq(hors.length, 0, hors.slice(0, 3).join(', '));
+  });
+
+  test('volume hebdo contenu : pas plus de 12 séries directes par muscle', () => {
+    const v = ev("(function(){var t={};Object.keys(UL_SPEC).forEach(function(s){Object.keys(UL_SPEC[s]).forEach(function(id){"
+      + "var m=(EX[id].m||[])[0];t[m]=(t[m]||0)+UL_SPEC[s][id].sets})});return t})()");
+    Object.keys(v).forEach(m => ok(v[m] <= 12, m + ' : ' + v[m] + ' séries'));
+  });
+
+  test('la séance affiche le repos du bloc et s\'enregistre', async () => {
+    ev("DB.program='ul';DB.workoutLog={};save();selectSession('LA');go('train')"); await wait(120);
+    const card = $$('#exo-list .exo[data-id="squat"]');
+    ok(card, 'squat absent de Bas A');
+    match(card.textContent, /4×8/, 'séries×reps du tableau absentes');
+    match(card.textContent, /180s/, 'repos de 3 min absent');
+    match($$('#exo-list .exo[data-id="legcurl"]').textContent, /Secondaire/, 'secondaire non signalé');
+    card.querySelector('.in-w').value = '60'; card.querySelector('.in-r').value = '8';
+    await ev('saveWorkout()'); await wait(120);
+    ev("closeModal('#summary-modal')");
+    eq(ev("DB.workoutLog[todayKey()].session"), 'LA');
+    eq(ev("DB.exoState.squat.lastW"), 60);
+    ev("go('prog')"); await wait(80);
+    match($$('#workout-history').textContent, /Bas A/, 'libellé de séance absent');
+  });
+
+  test('le bloc se choisit à l\'accueil et dans le sélecteur', async () => {
+    ok(ev("[...document.querySelectorAll('#onb-program option')].some(function(o){return o.value==='ul'})"), 'option absente');
+    ev("DB.program='fondation';save();go('train')"); await wait(80);
+    ev("setProgram('ul')"); await wait(80);
+    eq(ev("progKey()"), 'ul');
+    eq(ev("currentSession"), 'UA');
+  });
+});
+
+/* ============================================================
    Exécution
    ============================================================ */
 const out = document.getElementById('out');

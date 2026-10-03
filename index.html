@@ -892,7 +892,7 @@ body.offline .offbar{display:flex}
       <select id="onb-surplus"><option value="250">Lean +250</option><option value="400" selected>Standard +400</option><option value="550">Rapide +550</option></select></label>
   </div>
   <label class="field" style="margin-bottom:12px"><span>Programme d'entraînement</span>
-    <select id="onb-program"><option value="fondation">Fondation · full-body 3×/sem</option><option value="morpho">Morpho · segments longs</option><option value="split">Split · un groupe musculaire par séance</option></select></label>
+    <select id="onb-program"><option value="fondation">Fondation · full-body 3×/sem</option><option value="morpho">Morpho · segments longs</option><option value="split">Split · un groupe musculaire par séance</option><option value="ul">Upper/Lower · 4×/sem, version ectomorphe</option></select></label>
   <div class="card tight" id="onb-preview" style="margin-bottom:12px;text-align:center">
     <div class="small muted">Ton objectif quotidien</div>
     <div><b class="mono" id="onb-kcal" style="font-size:28px;letter-spacing:-.02em">—</b> <span class="small muted">kcal</span></div>
@@ -1463,14 +1463,40 @@ const SESSIONS={
   JA:{name:"Jambes",short:"Jambes",tip:"Point faible : chaque exercice de jambes a une série de plus. Composé lourd d'abord, puis unilatéral et isolation. Genoux dans l'axe, amplitude complète.",
      exos:["squat","rdl","bulgare","legext","mollets"]},
   BR:{name:"Bras",short:"Bras",tip:"Point faible : une série de plus sur chaque exercice. Triceps et biceps alternés pour que l'un récupère pendant que l'autre travaille. Chaque variante change l'angle : bras étiré, bras calé, prise neutre.",
-     exos:["dcserre","curl","barrefront","curlincline","triceps","marteau"]}
+     exos:["dcserre","curl","barrefront","curlincline","triceps","marteau"]},
+  /* Bloc Upper/Lower ectomorphe : séries, reps et repos viennent de UL_SPEC */
+  UA:{name:"Haut A — Épaules & bras",short:"Haut A",tip:"Épaules et bras en priorité, pecs et dos en secondaire (2 séries). Repos longs sur le développé militaire : on préserve la force, pas le cardio.",
+     exos:["ohp","elevlat","curl","triceps","dc","tiragehoriz"]},
+  LA:{name:"Bas A — Quadriceps",short:"Bas A",tip:"Squat lourd, 3 min de repos complètes. Le leg curl reste en secondaire : les ischios ont leur journée en Bas B.",
+     exos:["squat","presse","legcurl","mollets"]},
+  UB:{name:"Haut B — Pecs & dos",short:"Haut B",tip:"Développé couché et tractions en priorité, 4 séries chacun. Épaules et bras en secondaire pour les toucher deux fois dans la semaine.",
+     exos:["dc","traction","rowhalt","dvepaules","marteau"]},
+  LB:{name:"Bas B — Ischios & fessiers",short:"Bas B",tip:"Roumain lourd dos plat, puis fentes marchées. Pas de soulevé de terre le même jour : une seule charge lourde sur la chaîne postérieure.",
+     exos:["rdl","fentes","frontsquat","molletsassis"]}
 };
+/* Séries, fourchette de reps et repos (s) par exercice et par séance du bloc
+   Upper/Lower. Volume contenu (8-12 séries/sem par muscle), repos longs sur
+   les composés : un ectomorphe récupère moins vite et ne doit pas brûler en
+   volume les calories qui servent à grossir. sec = exercice secondaire. */
+const UL_SPEC={
+  UA:{ohp:{sets:3,rep:[6,8],rest:150},elevlat:{sets:3,rep:[10,12],rest:90},curl:{sets:3,rep:[8,10],rest:90},
+      triceps:{sets:3,rep:[8,10],rest:90},dc:{sets:2,rep:[8,10],rest:120,sec:1},tiragehoriz:{sets:2,rep:[8,10],rest:120,sec:1}},
+  LA:{squat:{sets:4,rep:[6,8],rest:180},presse:{sets:3,rep:[8,10],rest:120},legcurl:{sets:2,rep:[10,12],rest:90,sec:1},
+      mollets:{sets:3,rep:[12,15],rest:60}},
+  UB:{dc:{sets:4,rep:[6,8],rest:180},traction:{sets:4,rep:[6,10],rest:150},rowhalt:{sets:3,rep:[8,10],rest:120},
+      dvepaules:{sets:2,rep:[10,12],rest:90,sec:1},marteau:{sets:2,rep:[10,12],rest:90,sec:1}},
+  LB:{rdl:{sets:4,rep:[6,8],rest:180},fentes:{sets:3,rep:[10,12],rest:120},frontsquat:{sets:2,rep:[8,10],rest:120,sec:1},
+      molletsassis:{sets:3,rep:[12,15],rest:60}}
+};
+function slotSpec(s,id){return (s&&UL_SPEC[s]&&UL_SPEC[s][id])||null}
+function restFor(s,id){const p=slotSpec(s,id);return p?p.rest:exDef(id).rest}
 /* Deux blocs de trois séances : on en suit un à la fois. Six séances dans la
    même semaine n'aurait aucun sens pour une morphologie qui récupère mal. */
 const PROGRAMS={
   fondation:{n:"Fondation",desc:"Barres libres, 3 séances full-body. La base pour apprendre les mouvements.",s:['A','B','C']},
   morpho:{n:"Morpho",desc:"Exercices choisis pour segments longs, volume jambes doublé.",s:['D','E','F']},
-  split:{n:"Split",desc:"Un groupe musculaire par séance : Pecs-Dos, Jambes, Bras, épaules au choix. Deux variantes en rotation, une série de plus sur tes points faibles.",s:['PD','JA','BR']}
+  split:{n:"Split",desc:"Un groupe musculaire par séance : Pecs-Dos, Jambes, Bras, épaules au choix. Deux variantes en rotation, une série de plus sur tes points faibles.",s:['PD','JA','BR']},
+  ul:{n:"Upper/Lower",desc:"4 séances par semaine (haut/bas ×2), volume contenu et repos longs : la version ectomorphe. Ex. lundi, mardi, jeudi, vendredi — 2 jours de repos complets.",s:['UA','LA','UB','LB']}
 };
 function progKey(){return PROGRAMS[DB.program]?DB.program:'fondation'}
 function progSessions(){return PROGRAMS[progKey()].s}
@@ -1515,8 +1541,9 @@ function currentWeekIdx(){return viewWeek()}
 function inc(role){return role==='L'?5:2.5}
 /* la cible ne doit jamais sortir de la plage annoncée pour l'exercice :
    afficher « 3×17 » sur un mouvement décrit 12-15 était contradictoire */
-function targetReps(exoId,wk){const e=exDef(exoId);if(e.rep[1]===0)return 0;
-  return clamp(e.rep[1]+WEEKS[wk].repAdj,Math.max(4,e.rep[0]),e.rep[1])}
+function targetReps(exoId,wk,s){const e=exDef(exoId);if(e.rep[1]===0)return 0;
+  const p=slotSpec(s,exoId),r=p?p.rep:e.rep;
+  return clamp(r[1]+WEEKS[wk].repAdj,Math.max(4,r[0]),r[1])}
 function targetSets(exoId,wk){return clamp(3+WEEKS[wk].setMod,2,5)}
 // recommendation weight
 function recoWeight(exoId,wk){
@@ -1597,6 +1624,7 @@ function defaultExos(s){return SPLIT_DAYS[s]?splitPlan(s).map(x=>x.id):SESSIONS[
    faible, et un rappel reste léger (une série de moins) */
 function setsFor(s,id,wk){
   const base=targetSets(id,wk);
+  const p=slotSpec(s,id);if(p)return clamp(p.sets+WEEKS[wk].setMod,2,5);
   if(!SPLIT_DAYS[s])return base;
   const it=splitPlan(s).find(x=>x.id===id);
   const kind=it?it.kind:'main',g=it?it.g:exoGroup(id);
@@ -1895,7 +1923,7 @@ function renderHome(){
   if(allDone)tags.push('<span class="tag" style="color:var(--green)">semaine terminée</span>');
   $('#home-w-name').innerHTML=esc(SESSIONS[shown].name)
     +(tags.length?`<div class="row wrap" style="gap:5px;margin-top:5px">${tags.join('')}</div>`:'');
-  $('#home-workout').innerHTML=sessionExos(shown).slice(0,4).map(id=>`<div class="between" style="padding:4px 0"><span>${esc(exDef(id).n)}</span><span class="small mono">${setsFor(shown,id,wk)}×${exDef(id).rep[1]?targetReps(id,wk):'—'}</span></div>`).join('')
+  $('#home-workout').innerHTML=sessionExos(shown).slice(0,4).map(id=>`<div class="between" style="padding:4px 0"><span>${esc(exDef(id).n)}</span><span class="small mono">${setsFor(shown,id,wk)}×${exDef(id).rep[1]?targetReps(id,wk,shown):'—'}</span></div>`).join('')
     +`<button class="btn sm" style="width:100%;margin-top:10px" data-start-session="${esc(shown)}">${doneLetters.has(shown)?'Refaire la séance '+esc(sessName(shown)):'Démarrer la séance '+esc(sessName(shown))} →</button>`;
   /* prévisualisation d'une autre semaine : visible ici aussi, et annulable d'un geste */
   const pb=$('#home-preview');
@@ -2095,7 +2123,7 @@ function renderExos(){
   if(todayLog)Object.keys(todayLog).forEach(id=>{if(!exos.includes(id))exos.push(id)});
   const draft=draftFor(currentSession);const finishedArr=[];
   $('#exo-list').innerHTML=exos.map((id,idx)=>{
-    const e=exDef(id),tSets=setsFor(currentSession,id,wk),tReps=targetReps(id,wk),reco=recoWeight(id,wk),prev=last[id]||lastExoSets(id);
+    const e=exDef(id),tSets=setsFor(currentSession,id,wk),tReps=targetReps(id,wk,currentSession),rest=restFor(currentSession,id),reco=recoWeight(id,wk),prev=last[id]||lastExoSets(id);
     const sk=splitKind(currentSession,id),weakOn=sk&&sk.kind!=='abdos'&&splitCfg().weak.includes(sk.g);
     const isTime=e.time;const done=todayLog&&todayLog[id];
     const prevTxt=done?`✅ Fait aujourd'hui — appuie pour modifier`:(prev?`Dernière : ${prev.map(s=>(s.w?s.w+'kg×':'')+s.r+(isTime?'s':'')).join(', ')}${stepBadge(id)}`:'Première fois');
@@ -2121,13 +2149,13 @@ function renderExos(){
       <div class="num">${idx+1}</div>
       ${exoArt(id)}
       <div style="flex:1"><b>${esc(e.n)}</b><div class="small prev" style="color:var(--accent2)">${prevTxt}</div>
-        <div class="muscles">${sk&&sk.kind==='rappel'?'<span class="tag kind">🔁 Rappel '+esc(SPLIT_GROUPS[sk.g]||'')+'</span>':weakOn?'<span class="tag kind">🎯 Point faible +1 série</span>':''}${(e.m||[]).map(m=>`<span class="tag">${esc(m)}</span>`).join('')}</div></div>
-      <div class="small" style="text-align:right"><span data-st="${idx}"></span><br>${tSets}×${isTime?(tReps||'45')+'s':tReps} · <span class="muted">${e.rest}s</span></div></button>
+        <div class="muscles">${sk&&sk.kind==='rappel'?'<span class="tag kind">🔁 Rappel '+esc(SPLIT_GROUPS[sk.g]||'')+'</span>':weakOn?'<span class="tag kind">🎯 Point faible +1 série</span>':(slotSpec(currentSession,id)||{}).sec?'<span class="tag">◦ Secondaire</span>':''}${(e.m||[]).map(m=>`<span class="tag">${esc(m)}</span>`).join('')}</div></div>
+      <div class="small" style="text-align:right"><span data-st="${idx}"></span><br>${tSets}×${isTime?(tReps||'45')+'s':tReps} · <span class="muted">${rest}s</span></div></button>
       <div class="body">
         <div class="row wrap" style="gap:6px;margin-bottom:8px">
           <span class="tag">⏱ Tempo ${e.tempo}</span>
           <span class="tag">🎯 ${WEEKS[wk].rir}</span>
-          <span class="tag">😮‍💨 Repos ${e.rest}s</span>
+          <span class="tag">😮‍💨 Repos ${rest}s</span>
           ${e.warm?'<span class="tag" style="color:var(--amber)">🔥 Échauffe-toi</span>':''}
         </div>
         <div class="exo-hero">${exoArt(id)}<div class="cue">💬 ${esc(e.cue)}</div></div>
@@ -2250,7 +2278,7 @@ function toggleDone(btn,exoId){
     if(btn._complete&&!btn._complete()){
       const row=btn.closest('.setrow');const f=row&&(row.querySelector('.in-w')||row.querySelector('.in-r'));
       toast('Renseigne la charge et les reps');if(f)f.focus();return}
-    btn.classList.add('on');startRest(exDef(exoId).rest,exDef(exoId).n);
+    btn.classList.add('on');startRest(restFor(currentSession,exoId),exDef(exoId).n);
   }else btn.classList.remove('on');
   saveDraft();updateSessionProgress();
   const el=btn.closest('.exo');
@@ -2292,7 +2320,7 @@ async function saveWorkout(){
         const wv=clamp(isNaN(w)?0:w,0,MAX_W),rv=clamp(reps,0,e.time?MAX_SEC:MAX_R);
         if(rv<=0)return;
         const set={w:wv,r:rv};if(warm)set.warm=1;sets.push(set);any=true;
-        if(!warm){workSets++;if(wv>topW)topW=wv;const t=targetReps(id,wk);if(!e.time&&rv<t)hitTop=false;best1=Math.max(best1,e1rm(wv,rv))}}
+        if(!warm){workSets++;if(wv>topW)topW=wv;const t=targetReps(id,wk,currentSession);if(!e.time&&rv<t)hitTop=false;best1=Math.max(best1,e1rm(wv,rv))}}
     });
     if(sets.length){exos[id]=sets;
       const st=DB.exoState[id]||{};
