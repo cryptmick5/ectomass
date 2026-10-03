@@ -1,4 +1,4 @@
-const CACHE = 'ectomass-v9';
+const CACHE = 'ectomass-v10';
 const ASSETS = [
   './',
   'index.html',

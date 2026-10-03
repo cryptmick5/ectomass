@@ -1465,27 +1465,30 @@ const SESSIONS={
   BR:{name:"Bras",short:"Bras",tip:"Point faible : une série de plus sur chaque exercice. Triceps et biceps alternés pour que l'un récupère pendant que l'autre travaille. Chaque variante change l'angle : bras étiré, bras calé, prise neutre.",
      exos:["dcserre","curl","barrefront","curlincline","triceps","marteau"]},
   /* Bloc Upper/Lower ectomorphe : séries, reps et repos viennent de UL_SPEC */
-  UA:{name:"Haut A — Épaules & bras",short:"Haut A",tip:"Épaules et bras en priorité, pecs et dos en secondaire (2 séries). Repos longs sur le développé militaire : on préserve la force, pas le cardio.",
+  UA:{name:"Haut A — Épaules & bras",short:"Haut A",tip:"Épaules et bras en priorité (4 séries sur les bras, ton point faible), pecs et dos en secondaire. Repos longs sur le développé militaire : on préserve la force, pas le cardio.",
      exos:["ohp","elevlat","curl","triceps","dc","tiragehoriz"]},
   LA:{name:"Bas A — Quadriceps",short:"Bas A",tip:"Squat lourd, 3 min de repos complètes. Le leg curl reste en secondaire : les ischios ont leur journée en Bas B.",
      exos:["squat","presse","legcurl","mollets"]},
-  UB:{name:"Haut B — Pecs & dos",short:"Haut B",tip:"Développé couché et tractions en priorité, 4 séries chacun. Épaules et bras en secondaire pour les toucher deux fois dans la semaine.",
-     exos:["dc","traction","rowhalt","dvepaules","marteau"]},
+  UB:{name:"Haut B — Pecs & dos",short:"Haut B",tip:"Développé couché et tractions lourds d'abord, 4 séries chacun. Puis bras, latéraux et arrière d'épaule : deuxième passage de la semaine sur tes points faibles.",
+     exos:["dc","traction","rowhalt","marteau","tricepsnuque","elevlat","facepull"]},
   LB:{name:"Bas B — Ischios & fessiers",short:"Bas B",tip:"Roumain lourd dos plat, puis fentes marchées. Pas de soulevé de terre le même jour : une seule charge lourde sur la chaîne postérieure.",
-     exos:["rdl","fentes","frontsquat","molletsassis"]}
+     exos:["rdl","fentes","legcurl","frontsquat","molletsassis"]}
 };
 /* Séries, fourchette de reps et repos (s) par exercice et par séance du bloc
-   Upper/Lower. Volume contenu (8-12 séries/sem par muscle), repos longs sur
-   les composés : un ectomorphe récupère moins vite et ne doit pas brûler en
-   volume les calories qui servent à grossir. sec = exercice secondaire. */
+   Upper/Lower. Version corrigée : 7 à 12 séries directes par muscle et par
+   semaine (le volume reste le moteur de l'hypertrophie, le morphotype n'y
+   change rien ; ce qui compte c'est le surplus), bras et ischios remontés,
+   latéraux et arrière d'épaule ajoutés. Repos longs sur les composés pour
+   garder la charge. sec = exercice secondaire. */
 const UL_SPEC={
-  UA:{ohp:{sets:3,rep:[6,8],rest:150},elevlat:{sets:3,rep:[10,12],rest:90},curl:{sets:3,rep:[8,10],rest:90},
-      triceps:{sets:3,rep:[8,10],rest:90},dc:{sets:2,rep:[8,10],rest:120,sec:1},tiragehoriz:{sets:2,rep:[8,10],rest:120,sec:1}},
+  UA:{ohp:{sets:3,rep:[6,8],rest:150},elevlat:{sets:3,rep:[10,12],rest:90},curl:{sets:4,rep:[8,10],rest:90},
+      triceps:{sets:4,rep:[8,10],rest:90},dc:{sets:3,rep:[8,10],rest:120,sec:1},tiragehoriz:{sets:2,rep:[8,10],rest:120,sec:1}},
   LA:{squat:{sets:4,rep:[6,8],rest:180},presse:{sets:3,rep:[8,10],rest:120},legcurl:{sets:2,rep:[10,12],rest:90,sec:1},
       mollets:{sets:3,rep:[12,15],rest:60}},
   UB:{dc:{sets:4,rep:[6,8],rest:180},traction:{sets:4,rep:[6,10],rest:150},rowhalt:{sets:3,rep:[8,10],rest:120},
-      dvepaules:{sets:2,rep:[10,12],rest:90,sec:1},marteau:{sets:2,rep:[10,12],rest:90,sec:1}},
-  LB:{rdl:{sets:4,rep:[6,8],rest:180},fentes:{sets:3,rep:[10,12],rest:120},frontsquat:{sets:2,rep:[8,10],rest:120,sec:1},
+      marteau:{sets:3,rep:[10,12],rest:90},tricepsnuque:{sets:3,rep:[10,12],rest:90},
+      elevlat:{sets:3,rep:[12,15],rest:60},facepull:{sets:2,rep:[12,15],rest:60,sec:1}},
+  LB:{rdl:{sets:4,rep:[6,8],rest:180},fentes:{sets:3,rep:[10,12],rest:120},legcurl:{sets:3,rep:[10,12],rest:90},frontsquat:{sets:2,rep:[8,10],rest:120,sec:1},
       molletsassis:{sets:3,rep:[12,15],rest:60}}
 };
 function slotSpec(s,id){return (s&&UL_SPEC[s]&&UL_SPEC[s][id])||null}

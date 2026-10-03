@@ -796,7 +796,8 @@ suite('Upper/Lower ectomorphe', () => {
 
   test('séries, reps et repos suivent le tableau, pas les valeurs par défaut', () => {
     eq(ev("setsFor('LA','squat',0)"), 4, 'squat');
-    eq(ev("setsFor('UA','dc',0)"), 2, 'développé couché secondaire');
+    eq(ev("setsFor('UA','dc',0)"), 3, 'développé couché secondaire');
+    eq(ev("setsFor('UA','curl',0)"), 4, 'bras prioritaires');
     eq(ev("setsFor('UB','dc',0)"), 4, 'développé couché prioritaire');
     eq(ev("targetReps('triceps',0,'UA')"), 10, 'triceps 8-10');
     eq(ev("targetReps('triceps',0,'A')"), 15, 'les autres blocs gardent leur fourchette');
@@ -808,10 +809,16 @@ suite('Upper/Lower ectomorphe', () => {
     eq(hors.length, 0, hors.slice(0, 3).join(', '));
   });
 
-  test('volume hebdo contenu : pas plus de 12 séries directes par muscle', () => {
+  test('volume hebdo : 6 à 14 séries directes sur les muscles clés, jamais plus de 14', () => {
     const v = ev("(function(){var t={};Object.keys(UL_SPEC).forEach(function(s){Object.keys(UL_SPEC[s]).forEach(function(id){"
       + "var m=(EX[id].m||[])[0];t[m]=(t[m]||0)+UL_SPEC[s][id].sets})});return t})()");
-    Object.keys(v).forEach(m => ok(v[m] <= 12, m + ' : ' + v[m] + ' séries'));
+    Object.keys(v).forEach(m => ok(v[m] <= 14, m + ' : ' + v[m] + ' séries'));
+    ['Pectoraux', 'Biceps', 'Triceps', 'Quadriceps', 'Ischios'].forEach(m => ok((v[m] || 0) >= 6, m + ' : ' + (v[m] || 0) + ' séries'));
+  });
+
+  test('aucune séance ne dépasse 22 séries en semaine normale', () => {
+    const tot = ev("(function(){var o={};Object.keys(UL_SPEC).forEach(function(s){o[s]=Object.keys(UL_SPEC[s]).reduce(function(a,id){return a+setsFor(s,id,0)},0)});return o})()");
+    Object.keys(tot).forEach(s => ok(tot[s] <= 22, s + ' : ' + tot[s]));
   });
 
   test('la séance affiche le repos du bloc et s\'enregistre', async () => {
