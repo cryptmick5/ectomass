@@ -597,6 +597,7 @@ body.offline .offbar{display:flex}
       <div id="prog-pick" style="margin:12px 0 0"></div>
       <div class="seg" id="session-seg" role="tablist" aria-label="Choix de la séance" style="margin:10px 0"></div>
 
+      <div id="club-pick" style="margin-bottom:10px"></div>
       <div class="tip" style="margin-bottom:14px"><span class="i">🎯</span><div id="session-tip"></div></div>
       <div id="session-progress"><div class="sp-head"><b id="sp-title">Exercice 1/1</b><span class="small" id="sp-lbl"></span></div><div class="sp-track"><i id="sp-bar" style="width:0%"></i></div></div>
       <div id="draft-bar"><span>💾 <b>Séance en cours</b> — sauvegarde auto</span><button class="btn ghost mini" onclick="discardDraft()">Vider</button></div>
@@ -948,9 +949,10 @@ const DEFAULT={
   program:'fondation',
   startDate:todayKey(), weightLog:[], workoutLog:{}, exoState:{}, foodLog:{}, plan:{seed:1,daySeed:{},overrides:{},date:'',removed:[],checked:[]}, view:{week:null,session:'A'}, recentFoods:[], customFoods:[], sessionPlan:{}, customExos:{}, draft:null, profileSet:false, lastExport:null, backupSnooze:0, rest:null,
   split:{weak:['bras','jambes'],shoulders:'BR',rappel:true},
+  club:null, clubState:{}, swap:null,
   stamps:{}, tombs:{}
 };
-const SYNC_SECTIONS=['profile','program','startDate','weightLog','workoutLog','exoState','foodLog','plan','recentFoods','customFoods','sessionPlan','customExos','profileSet','split'];
+const SYNC_SECTIONS=['profile','program','startDate','weightLog','workoutLog','exoState','foodLog','plan','recentFoods','customFoods','sessionPlan','customExos','profileSet','split','club','clubState'];
 /* sections dont on fusionne les entrées une à une (clé = date ou id) */
 const ENTRY_SECTIONS=['workoutLog','foodLog','exoState','sessionPlan','customExos'];
 let IS_FIRST_RUN=false;try{IS_FIRST_RUN=!localStorage.getItem('ectomass_v2')}catch(e){}
@@ -1228,6 +1230,39 @@ const EX={
     setup:"Allongé sur un banc, un haltère tenu à deux mains au-dessus de la poitrine, bras légèrement fléchis.",
     exec:"Descends l'haltère derrière la tête, coudes fixes, jusqu'à l'étirement, puis ramène-le au-dessus de la poitrine.",
     err:"Plier les coudes pendant le mouvement, cambrer fort, charger trop lourd.",alt:"Pull-over poulie haute bras tendus"},
+  /* ---- Lot Basic-Fit : versions machines, trajectoire guidée pour la reprise ---- */
+  chestpress:{n:"Presse pectoraux (machine)",role:'U',rep:[8,10],rest:120,tempo:"2-1-2",warm:true,m:["Pectoraux","Triceps","Épaules"],cue:"Omoplates serrées contre le dossier, pousse sans verrouiller les coudes.",
+    setup:"Règle le siège pour que les poignées arrivent au milieu de la poitrine. Dos et tête collés au dossier, pieds à plat.",
+    exec:"Pousse les poignées devant toi en expirant, arrête juste avant le verrouillage des coudes, reviens en 2 s jusqu'à sentir l'étirement des pectoraux.",
+    err:"Siège trop haut (les épaules travaillent à la place des pecs), dos qui décolle, retour lâché qui claque la pile.",alt:"Développé guidé (Smith), développé couché haltères"},
+  dcsmith:{n:"Développé couché guidé (Smith)",role:'U',rep:[8,10],rest:120,tempo:"3-0-1",warm:true,m:["Pectoraux","Triceps","Épaules"],cue:"La barre descend au bas des pecs, coudes à 45°.",
+    setup:"Banc plat centré sous la barre, qui doit toucher le bas de la poitrine. Pieds à plat, omoplates serrées.",
+    exec:"Déverrouille d'un quart de tour, descends en 3 s jusqu'à effleurer la poitrine, pousse, reverrouille en fin de série.",
+    err:"Banc décentré (barre sur le cou ou le ventre), coudes à 90°, oublier de reverrouiller.",alt:"Presse pectoraux, développé couché haltères"},
+  shoulderpress:{n:"Presse épaules (machine)",role:'U',rep:[8,10],rest:120,tempo:"2-1-2",warm:true,m:["Épaules","Triceps"],cue:"Dos plaqué, pousse vers le haut sans cambrer.",
+    setup:"Siège réglé pour que les poignées partent à hauteur des épaules. Dos collé au dossier, abdos serrés.",
+    exec:"Pousse vers le haut en expirant, arrête avant le verrouillage, redescends en 2 s jusqu'aux épaules.",
+    err:"Cambrer le bas du dos, siège trop bas (les épaules partent trop loin), descendre trop vite.",alt:"Développé épaules haltères"},
+  tiragevert:{n:"Tirage vertical (machine)",role:'U',rep:[8,10],rest:120,tempo:"2-1-2",warm:true,m:["Dos (grand dorsal)","Biceps"],cue:"Tire les coudes vers les hanches, poitrine vers la barre.",
+    setup:"Cuisses bloquées sous les boudins, prise un peu plus large que les épaules, buste très légèrement penché en arrière.",
+    exec:"Tire la barre jusqu'au haut de la poitrine en serrant les omoplates, marque 1 s, remonte en contrôlant jusqu'à bras tendus.",
+    err:"Tirer derrière la nuque, se balancer en arrière, remonter en lâchant la charge.",alt:"Tirage prise neutre, tractions assistées"},
+  rdlsmith:{n:"Soulevé de terre roumain (Smith)",role:'L',rep:[8,10],rest:150,tempo:"3-1-1",warm:true,m:["Ischios","Fessiers","Lombaires"],cue:"Dos plat, les hanches reculent, la barre glisse le long des cuisses.",
+    setup:"Barre à mi-cuisse, pieds largeur de hanches sous la barre, genoux légèrement fléchis et fixes.",
+    exec:"Pousse les fesses en arrière en gardant le dos plat jusqu'à sentir l'étirement des ischios (sous les genoux), puis remonte en serrant les fessiers.",
+    err:"Dos qui s'arrondit, genoux qui plient comme un squat, descendre plus bas que ta souplesse le permet.",alt:"Hip thrust, roumain haltères"},
+  presseuni:{n:"Presse à cuisses unilatérale",role:'L',rep:[10,12],rest:90,tempo:"2-1-2",m:["Quadriceps","Fessiers"],cue:"Une jambe à la fois, genou dans l'axe du pied.",
+    setup:"Charge réduite de moitié environ. Un pied au centre de la plateforme, l'autre posé au sol ou sur le cadre.",
+    exec:"Descends jusqu'à environ 90° au genou, pousse dans le talon sans verrouiller, fais toutes les reps puis change de jambe.",
+    err:"Genou qui rentre vers l'intérieur, bassin qui décolle du dossier, descendre trop bas.",alt:"Split squat haltères, fentes"},
+  molletspresse:{n:"Mollets à la presse",role:'I',rep:[12,15],rest:60,tempo:"2-2-1",m:["Mollets"],cue:"Amplitude complète, 2 s en étirement en bas.",
+    setup:"Assis à la presse, jambes tendues sans verrouiller, seul l'avant du pied sur le bas de la plateforme. Sécurités en place.",
+    exec:"Pousse sur la pointe des pieds le plus haut possible, redescends lentement et marque 2 s d'étirement.",
+    err:"Plier les genoux, rebondir en bas, amplitude de quelques centimètres.",alt:"Mollets debout, mollets assis"},
+  pecdeckinv:{n:"Pec deck inversé",role:'I',rep:[12,15],rest:60,tempo:"2-1-2",m:["Épaules (deltoïde postérieur)","Trapèzes"],cue:"Bras presque tendus, ouvre en arrière sans hausser les épaules.",
+    setup:"Assis face au dossier, poitrine contre le coussin, poignées réglées en position arrière, à hauteur d'épaules.",
+    exec:"Écarte les bras vers l'arrière en arc de cercle, marque 1 s, reviens doucement sans laisser retomber la pile.",
+    err:"Hausser les épaules, tirer avec les bras pliés, aller chercher trop loin en cambrant.",alt:"Face pull, oiseau haltères"},
   facepull:{n:"Face pull",role:'I',rep:[12,15],rest:60,tempo:"2-1-2",m:["Épaules (deltoïde postérieur)","Trapèzes"],cue:"Tire la corde vers le front, coudes hauts.",
     setup:"Poulie à hauteur du visage, corde tenue mains en pronation, un pas en arrière, bras tendus.",
     exec:"Tire la corde vers le front en écartant les mains et en montant les coudes, serre l'arrière des épaules 1 s, reviens lentement.",
@@ -1424,12 +1459,38 @@ const ART=(()=>{
       +far([28,21],[20,18],[31,14])+body([28,21],[21,16],[32,15])+head(28,12)
       +frame([32,15],[53,17]),
 
+    /* ---- Lot Basic-Fit ---- */
+    chestpress:floor+pad([10,44],[26,44])+pad([10,44],[8,22])+frame([18,45],[18,57])
+      +frame([46,8],[46,57])+frame([46,12],[38,27])
+      +far([13,42],[27,43],[28,56])+body([13,42],[12,25])+body([13,42],[28,42],[30,56])
+      +far([12,27],[24,30],[36,27])+body([12,27],[25,29],[37,28])+bar([37,24],[37,32])+head(13,18),
+    shoulderpress:floor+pad([10,44],[26,44])+pad([10,44],[8,22])+frame([18,45],[18,57])
+      +frame([36,4],[36,57])+frame([36,7],[27,8])
+      +far([13,42],[27,43],[28,56])+body([13,42],[12,25])+body([13,42],[28,42],[30,56])
+      +far([12,27],[10,18],[16,9])+body([12,27],[20,19],[23,9])+bar([14,8],[28,8])+head(13,18),
+    tiragevert:floor+pad([16,44],[34,44])+frame([25,45],[25,57])+pad([34,35],[44,35])+frame([28,2],[28,6])
+      +body([26,42],[26,25])+body([26,42],[40,40],[40,56])+far([26,42],[38,41],[38,56])
+      +far([26,27],[34,18],[38,8])+body([26,27],[18,18],[16,8])+bar([12,7],[44,7])+head(26,18),
+    presseuni:floor+pad([8,54],[22,34])+frame([12,55],[12,57])
+      +far([14,49],[22,53],[24,57])
+      +body([19,39],[14,49],[32,41],[43,31])+body([19,39],[22,45],[26,49])
+      +head(23,33)+pad([39,24],[49,36])+disc(53,30,13),
+    molletspresse:floor+pad([8,54],[22,34])+frame([12,55],[12,57])
+      +far([14,49],[44,36])+body([19,39],[14,49],[45,35])+body([19,39],[22,45],[26,49])
+      +head(23,33)+pad([44,26],[52,38])+disc(55,32,13),
+    pecdeckinv:floor+pad([38,18],[38,42])+pad([24,44],[38,44])+frame([31,45],[31,57])+frame([52,6],[52,57])
+      +body([30,42],[33,24])+body([30,42],[44,46],[44,57])+far([30,42],[42,47],[41,57])
+      +far([33,27],[24,24],[14,23])+body([33,27],[23,27],[13,28])+bar([13,24],[13,32])+head(35,18),
+
     /* exercice personnalisé : silhouette générique */
     _:floor+body([31,21],[31,35],[31,46],[32,57])
       +far([31,21],[33,28],[34,35])+body([31,21],[29,28],[28,35])
       +head(31,14)+db(27,37)
   };
 })();
+/* Smith : même geste que la version libre, entre deux rails */
+ART.dcsmith=ART.dc+'<path class="af-s" d="M8 6V57M56 6V57"/>';
+ART.rdlsmith=ART.rdl+'<path class="af-s" d="M12 6V57M54 6V57"/>';
 /* Un exercice créé par l'utilisateur retombe sur la silhouette générique. */
 function exoArt(id,cls){
   return `<svg class="${cls||'exo-fig'}" viewBox="0 0 64 64" aria-hidden="true" focusable="false">${ART[id]||ART._}</svg>`;
@@ -1465,14 +1526,14 @@ const SESSIONS={
   BR:{name:"Bras",short:"Bras",tip:"Point faible : une série de plus sur chaque exercice. Triceps et biceps alternés pour que l'un récupère pendant que l'autre travaille. Chaque variante change l'angle : bras étiré, bras calé, prise neutre.",
      exos:["dcserre","curl","barrefront","curlincline","triceps","marteau"]},
   /* Bloc Upper/Lower ectomorphe : séries, reps et repos viennent de UL_SPEC */
-  UA:{name:"Haut A — Épaules & bras",short:"Haut A",tip:"Épaules et bras en priorité (4 séries sur les bras, ton point faible), pecs et dos en secondaire. Repos longs sur le développé militaire : on préserve la force, pas le cardio.",
-     exos:["ohp","elevlat","curl","triceps","dc","tiragehoriz"]},
-  LA:{name:"Bas A — Quadriceps",short:"Bas A",tip:"Squat lourd, 3 min de repos complètes. Le leg curl reste en secondaire : les ischios ont leur journée en Bas B.",
-     exos:["squat","presse","legcurl","mollets"]},
-  UB:{name:"Haut B — Pecs & dos",short:"Haut B",tip:"Développé couché et tractions lourds d'abord, 4 séries chacun. Puis bras, latéraux et arrière d'épaule : deuxième passage de la semaine sur tes points faibles.",
-     exos:["dc","traction","rowhalt","marteau","tricepsnuque","elevlat","facepull"]},
-  LB:{name:"Bas B — Ischios & fessiers",short:"Bas B",tip:"Roumain lourd dos plat, puis fentes marchées. Pas de soulevé de terre le même jour : une seule charge lourde sur la chaîne postérieure.",
-     exos:["rdl","fentes","legcurl","frontsquat","molletsassis"]}
+  UA:{name:"Haut A — Épaules & bras",short:"Haut A",tip:"Épaules et bras en priorité (4 séries sur les bras, ton point faible), pecs et dos en secondaire. Repos longs sur la presse épaules : on préserve la force, pas le cardio.",
+     exos:["shoulderpress","elevlat","curl","triceps","chestpress","tiragehoriz"]},
+  LA:{name:"Bas A — Quadriceps",short:"Bas A",tip:"Presse à cuisses en premier, 3 min de repos complètes. La machine guide la trajectoire : tu pousses fort sans risque technique pour le dos.",
+     exos:["presse","legext","legcurl","molletspresse"]},
+  UB:{name:"Haut B — Pecs & dos",short:"Haut B",tip:"Presse pectoraux et tirage vertical d'abord, 4 séries chacun. Puis bras, latéraux et arrière d'épaule : deuxième passage de la semaine sur tes points faibles.",
+     exos:["chestpress","tiragevert","tiragehoriz","marteau","tricepsnuque","elevlat","pecdeckinv"]},
+  LB:{name:"Bas B — Ischios & fessiers",short:"Bas B",tip:"Roumain à la Smith dos plat : les rails tiennent la barre, toi tu gères la charnière de hanche. Puis presse une jambe à la fois.",
+     exos:["rdlsmith","presseuni","legcurl","legext","molletspresse"]}
 };
 /* Séries, fourchette de reps et repos (s) par exercice et par séance du bloc
    Upper/Lower. Version corrigée : 7 à 12 séries directes par muscle et par
@@ -1481,17 +1542,52 @@ const SESSIONS={
    latéraux et arrière d'épaule ajoutés. Repos longs sur les composés pour
    garder la charge. sec = exercice secondaire. */
 const UL_SPEC={
-  UA:{ohp:{sets:3,rep:[6,8],rest:150},elevlat:{sets:3,rep:[10,12],rest:90},curl:{sets:4,rep:[8,10],rest:90},
-      triceps:{sets:4,rep:[8,10],rest:90},dc:{sets:3,rep:[8,10],rest:120,sec:1},tiragehoriz:{sets:2,rep:[8,10],rest:120,sec:1}},
-  LA:{squat:{sets:4,rep:[6,8],rest:180},presse:{sets:3,rep:[8,10],rest:120},legcurl:{sets:2,rep:[10,12],rest:90,sec:1},
-      mollets:{sets:3,rep:[12,15],rest:60}},
-  UB:{dc:{sets:4,rep:[6,8],rest:180},traction:{sets:4,rep:[6,10],rest:150},rowhalt:{sets:3,rep:[8,10],rest:120},
+  UA:{shoulderpress:{sets:3,rep:[8,10],rest:150},elevlat:{sets:3,rep:[10,12],rest:90},curl:{sets:4,rep:[8,10],rest:90},
+      triceps:{sets:4,rep:[8,10],rest:90},chestpress:{sets:3,rep:[8,10],rest:120,sec:1},tiragehoriz:{sets:2,rep:[10,12],rest:120,sec:1}},
+  LA:{presse:{sets:4,rep:[8,10],rest:180},legext:{sets:3,rep:[10,12],rest:90},legcurl:{sets:2,rep:[10,12],rest:90,sec:1},
+      molletspresse:{sets:3,rep:[12,15],rest:60}},
+  UB:{chestpress:{sets:4,rep:[8,10],rest:150},tiragevert:{sets:4,rep:[8,10],rest:150},tiragehoriz:{sets:3,rep:[10,12],rest:120},
       marteau:{sets:3,rep:[10,12],rest:90},tricepsnuque:{sets:3,rep:[10,12],rest:90},
-      elevlat:{sets:3,rep:[12,15],rest:60},facepull:{sets:2,rep:[12,15],rest:60,sec:1}},
-  LB:{rdl:{sets:4,rep:[6,8],rest:180},fentes:{sets:3,rep:[10,12],rest:120},legcurl:{sets:3,rep:[10,12],rest:90},frontsquat:{sets:2,rep:[8,10],rest:120,sec:1},
-      molletsassis:{sets:3,rep:[12,15],rest:60}}
+      elevlat:{sets:3,rep:[12,15],rest:60},pecdeckinv:{sets:2,rep:[12,15],rest:60,sec:1}},
+  LB:{rdlsmith:{sets:4,rep:[8,10],rest:180},presseuni:{sets:3,rep:[10,12],rest:90},legcurl:{sets:3,rep:[10,12],rest:90},
+      legext:{sets:2,rep:[12,15],rest:90,sec:1},molletspresse:{sets:3,rep:[12,15],rest:60}}
 };
-function slotSpec(s,id){return (s&&UL_SPEC[s]&&UL_SPEC[s][id])||null}
+/* Lot Basic-Fit. « Machine prise » : chaîne d'alternatives par exercice, du
+   plus proche au plus éloigné. L'échange ne vaut que pour la séance du jour
+   et chaque variante garde sa propre mémoire de charge. */
+const BUSY_ALT={chestpress:['dcsmith','dchalt'],dcsmith:['chestpress','dchalt'],shoulderpress:['dvepaules'],
+  tiragevert:['tiragenut','traction'],tiragehoriz:['rowhalt'],presse:['hacksquat','frontsquat'],presseuni:['splitsquat'],
+  rdlsmith:['hipthrust','rdl'],triceps:['tricepsnuque','dips'],tricepsnuque:['triceps'],curl:['curlpupitre','marteau'],
+  marteau:['curl'],pecdeckinv:['facepull','oiseau'],molletspresse:['mollets','molletsassis']};
+function swapMap(s){const w=DB.swap;return (w&&w.d===todayKey()&&w.s===s&&w.m)||{}}
+function slotOrig(s,id){const m=swapMap(s);return Object.keys(m).find(k=>m[k]===id)||id}
+/* exercice suivant dans la chaîne, en sautant ce qui est déjà dans la séance */
+function busyNext(s,id){const orig=slotOrig(s,id),alts=BUSY_ALT[orig];if(!alts)return null;
+  const cur=sessionExos(s),chain=[orig].concat(alts).filter(x=>EX[x]&&(x===id||x===orig||!cur.includes(x)));
+  if(chain.length<2)return null;return chain[(chain.indexOf(id)+1)%chain.length]}
+async function swapBusy(id){const s=currentSession,nx=busyNext(s,id);if(!nx)return;
+  const dr=draftFor(s),filled=dr&&dr[id]&&dr[id].some(x=>x&&(x.w||x.r));
+  if(filled&&!await askConfirm('Les séries déjà notées sur « '+exDef(id).n+' » ne seront pas gardées. Changer quand même ?',{title:'Machine prise',ok:'Changer'}))return;
+  const orig=slotOrig(s,id),m=Object.assign({},swapMap(s));
+  if(nx===orig)delete m[orig];else m[orig]=nx;
+  DB.swap={d:todayKey(),s,m};save();renderExos();
+  toast(nx===orig?'Retour à « '+exDef(nx).n+' »':'« '+exDef(nx).n+' » à la place');
+}
+/* charges par club : la même machine n'a pas la même pile d'une salle à l'autre */
+const CLUBS={toulon:'Toulon',ciotat:'La Ciotat'};
+function curClub(){return CLUBS[DB.club]?DB.club:null}
+function setClub(k){if(!CLUBS[k]||k===DB.club)return;DB.club=k;save();renderExos();toast('Salle : '+CLUBS[k]+' — charges de ce club')}
+/* une séance d'une autre salle ne sert pas de référence ; une séance d'avant le
+   choix des clubs (sans club) reste visible partout */
+function logClubOk(L){const c=curClub();return !c||!L||!L.club||L.club===c}
+function recoState(id){const c=curClub();if(!c)return DB.exoState[id]||null;
+  const cs=DB.clubState&&DB.clubState[c]&&DB.clubState[c][id];if(cs)return cs;
+  const h=exoHistory(id,false);return h.length?{lastW:h[h.length-1].w,hitTop:false}:null}
+function clubPickHTML(){const c=curClub();
+  return `<div class="row wrap" style="gap:6px;align-items:center"><span class="small muted">📍 Salle :</span>${Object.keys(CLUBS).map(k=>`<button type="button" class="chip ${k===c?'on':''}" data-club="${k}" aria-pressed="${k===c}">${CLUBS[k]}</button>`).join('')}</div>`
+    +(c?'':'<div class="small muted" style="margin-top:4px">Choisis ta salle : chaque club garde ses propres charges.</div>');
+}
+function slotSpec(s,id){const U=s&&UL_SPEC[s];return U?(U[id]||U[slotOrig(s,id)]||null):null}
 function restFor(s,id){const p=slotSpec(s,id);return p?p.rest:exDef(id).rest}
 /* Deux blocs de trois séances : on en suit un à la fois. Six séances dans la
    même semaine n'aurait aucun sens pour une morphologie qui récupère mal. */
@@ -1550,7 +1646,7 @@ function targetReps(exoId,wk,s){const e=exDef(exoId);if(e.rep[1]===0)return 0;
 function targetSets(exoId,wk){return clamp(3+WEEKS[wk].setMod,2,5)}
 // recommendation weight
 function recoWeight(exoId,wk){
-  const st=DB.exoState[exoId]; if(!st||!st.lastW) return null;
+  const st=recoState(exoId); if(!st||!st.lastW) return null;
   const step=inc(exDef(exoId).role);
   const round=v=>Math.max(step,Math.round(v/step)*step);
   if(WEEKS[wk].deload) return round(st.lastW*0.6);
@@ -1562,7 +1658,8 @@ function e1rm(w,r){return r>0?Math.round(w*(1+r/30)):w}
 // exercise resolution (built-in + custom) & flexible session composition
 function exDef(id){return EX[id]||(DB.customExos&&DB.customExos[id])||{n:id,role:'I',rep:[8,12],rest:60,m:['Personnalisé'],cue:'Exercice personnalisé.',tempo:'—',setup:'—',exec:'—',err:'—',alt:'—'}}
 function exLibrary(){return Object.assign({},EX,DB.customExos||{})}
-function sessionExos(s){const p=DB.sessionPlan&&DB.sessionPlan[s];return (p&&p.length)?p.filter(id=>EX[id]||(DB.customExos||{})[id]):defaultExos(s)}
+function baseExos(s){const p=DB.sessionPlan&&DB.sessionPlan[s];return (p&&p.length)?p.filter(id=>EX[id]||(DB.customExos||{})[id]):defaultExos(s)}
+function sessionExos(s){const m=swapMap(s);return baseExos(s).map(id=>m[id]||id)}
 function setSessionExos(s,arr){if(!DB.sessionPlan)DB.sessionPlan={};DB.sessionPlan[s]=arr;save()}
 function isCustomSession(s){return !!(DB.sessionPlan&&DB.sessionPlan[s]&&DB.sessionPlan[s].length)}
 
@@ -1681,7 +1778,7 @@ function sessLabel(s){const S=SESSIONS[s];return S&&S.short?S.short:'Séance '+s
 function exoHistory(id,withToday){
   const t=todayKey();
   return Object.keys(DB.workoutLog).filter(k=>withToday?k<=t:k<t).sort().map(k=>{
-    const L=DB.workoutLog[k],arr=L&&L.exos&&L.exos[id];if(!arr)return null;
+    const L=DB.workoutLog[k],arr=L&&L.exos&&L.exos[id];if(!arr||!logClubOk(L))return null;
     const work=arr.filter(x=>!x.warm&&(x.r||0)>0);if(!work.length)return null;
     const top=work.reduce((a,x)=>((x.w||0)>(a.w||0)||((x.w||0)===(a.w||0)&&x.r>a.r))?x:a,work[0]);
     return {date:k,sets:arr,w:top.w||0,r:top.r,e1:Math.max(...work.map(x=>e1rm(x.w||0,x.r)))};
@@ -2058,7 +2155,7 @@ function setProgram(k){
   renderProgPick();renderSessionSeg();renderExos();renderHome();renderWeekStrip();
   toast('Bloc « '+PROGRAMS[k].n+' » activé');
 }
-function lastSessionData(sess){const keys=Object.keys(DB.workoutLog).filter(k=>DB.workoutLog[k].session===sess).sort();return keys.length?DB.workoutLog[keys[keys.length-1]].exos:{}}
+function lastSessionData(sess){const keys=Object.keys(DB.workoutLog).filter(k=>DB.workoutLog[k].session===sess&&logClubOk(DB.workoutLog[k])).sort();return keys.length?DB.workoutLog[keys[keys.length-1]].exos:{}}
 /* ---- Brouillon de séance : rien de saisi ne doit être perdu ---- */
 function getDraft(){const d=DB.draft;return (d&&d.date===todayKey())?d:null}
 function draftFor(sess){const d=getDraft();return (d&&d.s)?d.s[sess]:null}
@@ -2118,6 +2215,7 @@ function renderExos(){
   const S=SESSIONS[currentSession],wk=currentWeekIdx();const exos=sessionExos(currentSession);
   const edited=isCustomSession(currentSession);
   $('#session-tip').innerHTML=S.tip+(edited?' <span style="color:var(--amber)">· séance personnalisée</span> <a href="#" onclick="resetSession();return false" style="font-size:12px">réinitialiser</a>':'')+splitInfoHTML(currentSession);
+  const cp=$('#club-pick');if(cp)cp.innerHTML=clubPickHTML();
   const last=lastSessionData(currentSession);
   // today's already-logged session (for editing)
   const todayLog=(DB.workoutLog[todayKey()]&&DB.workoutLog[todayKey()].session===currentSession)?DB.workoutLog[todayKey()].exos:null;
@@ -2129,8 +2227,8 @@ function renderExos(){
     const e=exDef(id),tSets=setsFor(currentSession,id,wk),tReps=targetReps(id,wk,currentSession),rest=restFor(currentSession,id),reco=recoWeight(id,wk),prev=last[id]||lastExoSets(id);
     const sk=splitKind(currentSession,id),weakOn=sk&&sk.kind!=='abdos'&&splitCfg().weak.includes(sk.g);
     const isTime=e.time;const done=todayLog&&todayLog[id];
-    const prevTxt=done?`✅ Fait aujourd'hui — appuie pour modifier`:(prev?`Dernière : ${prev.map(s=>(s.w?s.w+'kg×':'')+s.r+(isTime?'s':'')).join(', ')}${stepBadge(id)}`:'Première fois');
-    const recoTxt=reco!=null?`<div class="reco">✅ Charge conseillée : <b>${reco} kg</b> ${WEEKS[wk].deload?'(deload)':(isComeback()?'· reprise après pause, −10 % pour retrouver le geste':(DB.exoState[id]&&DB.exoState[id].hitTop?'· +'+inc(e.role)+'kg, tu as validé la dernière fois !':'· maintiens et vise le haut des reps'))}</div>`:'';
+    const prevTxt=done?`✅ Fait aujourd'hui — appuie pour modifier`:(prev?`Dernière${curClub()?' à '+CLUBS[curClub()]:''} : ${prev.map(s=>(s.w?s.w+'kg×':'')+s.r+(isTime?'s':'')).join(', ')}${stepBadge(id)}`:'Première fois');
+    const recoTxt=reco!=null?`<div class="reco">✅ Charge conseillée : <b>${reco} kg</b> ${curClub()?'à '+CLUBS[curClub()]+' ':''}${WEEKS[wk].deload?'(deload)':(isComeback()?'· reprise après pause, −10 % pour retrouver le geste':((recoState(id)||{}).hitTop?'· +'+inc(e.role)+'kg, tu as validé la dernière fois !':'· maintiens et vise le haut des reps'))}</div>`:'';
     // sets: use logged today if present, else target count
     const logged=done?todayLog[id]:null;const dr=draft?draft[id]:null;
     const nSets=dr?dr.length:(logged?logged.length:tSets);
@@ -2161,6 +2259,8 @@ function renderExos(){
           <span class="tag">😮‍💨 Repos ${rest}s</span>
           ${e.warm?'<span class="tag" style="color:var(--amber)">🔥 Échauffe-toi</span>':''}
         </div>
+        ${(()=>{const nx=done?null:busyNext(currentSession,id);if(!nx)return '';const back=nx===slotOrig(currentSession,id)&&nx!==id;
+          return `<button type="button" class="chip" data-busy="${id}" style="margin-bottom:10px">${back?'↩ Revenir à':'🔄 Machine prise →'} ${esc(exDef(nx).n)}</button>`})()}
         <div class="exo-hero">${exoArt(id)}<div class="cue">💬 ${esc(e.cue)}</div></div>
         ${e.warm?`<div class="warmnote">🔥 <b>Échauffement</b> : 2-3 séries progressives. Appuie sur le n° de série pour la marquer « W » (exclue des PR/volume).</div>`:''}
         ${(()=>{const mn=morphoNote(id);return mn?`<div class="morphonote ${mn.lvl}">${mn.lvl==='good'?'🧬 <b>Adapté à ta morphologie</b>':'🧬 <b>Attention à ta morphologie</b>'} — ${esc(mn.txt)}</div>`:''})()}
@@ -2274,7 +2374,7 @@ function addSetRow(btn,id){const body=btn.closest('.body');const rows=body.query
   const exn=esc(exDef(id).n);
   div.innerHTML=`<button class="sn" onclick="toggleWarm(this)" title="Marquer échauffement">${n+1}</button>${isTime?'<div class="small muted" style="text-align:center">durée</div>':stepper(`<input type="number" inputmode="decimal" class="in-w" min="0" max="${MAX_W}" step="0.5" enterkeyhint="next" aria-label="Charge série ${n+1}, ${exn}" placeholder="kg">`,0.5,MAX_W,'kg')}${stepper(`<input type="number" inputmode="numeric" class="in-r" min="0" max="${isTime?MAX_SEC:MAX_R}" step="1" enterkeyhint="next" aria-label="${isTime?'Secondes':'Répétitions'} série ${n+1}, ${exn}" placeholder="reps">`,isTime?5:1,isTime?MAX_SEC:MAX_R,isTime?'s':'rep')}<div class="e1" data-e1>—</div><button class="done" onclick="toggleDone(this,'${id}')">✓</button>`;
   rows[rows.length-1].after(div);bindSetInputs();saveDraft();}
-function removeExo(idx){const arr=sessionExos(currentSession).slice();const [rm]=arr.splice(idx,1);setSessionExos(currentSession,arr);renderExos();toast('« '+exDef(rm).n+' » retiré');}
+function removeExo(idx){const arr=baseExos(currentSession).slice();const [rm]=arr.splice(idx,1);setSessionExos(currentSession,arr);renderExos();toast('« '+exDef(rm).n+' » retiré');}
 function resetSession(){if(DB.sessionPlan)delete DB.sessionPlan[currentSession];save();renderExos();toast('Séance réinitialisée');}
 function toggleDone(btn,exoId){
   if(!btn.classList.contains('on')){
@@ -2301,14 +2401,14 @@ function setExoTab(t){$$('#exo-tabs button').forEach(b=>b.classList.toggle('on',
 function renderExoResults(q){const lib=exLibrary();const cur=new Set(sessionExos(currentSession));
   const list=Object.keys(lib).filter(id=>lib[id].n.toLowerCase().includes((q||'').toLowerCase()));
   $('#exo-results').innerHTML=list.map(id=>{const e=lib[id];const inCur=cur.has(id);return `<button type="button" class="qfood tapz" data-pick-exo="${esc(id)}"><span style="display:flex;align-items:center">${exoArt(id)}<span><b>${esc(e.n)}</b><span class="small" style="display:block">${esc((e.m||[]).join(', '))} · ${e.rep[1]?e.rep[0]+'-'+e.rep[1]+' reps':'durée'}</span></span></span>${inCur?'<span class="tag">déjà</span>':'<span class="pill k">＋</span>'}</button>`}).join('')||'<div class="small muted" style="padding:8px">Aucun résultat — crée-le dans l\'onglet « Créer ».</div>'}
-function pickExo(id){const arr=sessionExos(currentSession).slice();
+function pickExo(id){const arr=baseExos(currentSession).slice();
   if(exoPickMode==='swap'&&exoPickIdx!=null)arr[exoPickIdx]=id;else{if(arr.includes(id)){toast('Déjà dans la séance');return}arr.push(id)}
   setSessionExos(currentSession,arr);closeModal('#exo-modal');renderExos();toast(exoPickMode==='swap'?'Exercice échangé ✓':'Exercice ajouté ✓')}
 function createCustomExo(){const name=$('#ce-name').value.trim();if(!name){toast('Donne un nom à l\'exercice');return}
   const id='cx_'+Date.now().toString(36),rmin=+$('#ce-repmin').value||8,rmax=+$('#ce-repmax').value||12;
   const ex={n:name,role:$('#ce-role').value,rep:[Math.min(rmin,rmax),Math.max(rmin,rmax)],rest:+$('#ce-rest').value||90,m:[$('#ce-muscle').value.trim()||'Personnalisé'],cue:'Exercice personnalisé.',tempo:'2-0-1',setup:'Définis ta propre technique et reste régulier.',exec:'—',err:'—',alt:'—'};
   if(!DB.customExos)DB.customExos={};DB.customExos[id]=ex;
-  const arr=sessionExos(currentSession).slice();
+  const arr=baseExos(currentSession).slice();
   if(exoPickMode==='swap'&&exoPickIdx!=null)arr[exoPickIdx]=id;else arr.push(id);
   setSessionExos(currentSession,arr);
   ['ce-name','ce-muscle'].forEach(i=>$('#'+i).value='');
@@ -2328,7 +2428,8 @@ async function saveWorkout(){
     if(sets.length){exos[id]=sets;
       const st=DB.exoState[id]||{};
       if(!e.time&&workSets>0){if(st.pr==null||topW>st.pr){if(st.pr!=null)prs.push({n:e.n,w:topW,prev:st.pr});st.pr=topW;st.prDate=todayKey()}
-        st.best1=Math.max(st.best1||0,best1);st.lastW=topW;st.hitTop=hitTop&&!WEEKS[wk].deload;}
+        st.best1=Math.max(st.best1||0,best1);st.lastW=topW;st.hitTop=hitTop&&!WEEKS[wk].deload;
+        const c=curClub();if(c){if(!DB.clubState)DB.clubState={};const cs=DB.clubState[c]=DB.clubState[c]||{};cs[id]={lastW:topW,hitTop:st.hitTop}}}
       DB.exoState[id]=st;}
   });
   if(!any){toast('Renseigne au moins une série pour enregistrer','warn');return}
@@ -2340,6 +2441,7 @@ async function saveWorkout(){
   const notes=($('#session-notes')&&$('#session-notes').value.trim())||'';
   const entry={session:currentSession,week:wk,exos,rir:collectRir(),notes,ts:Date.now()};
   if(SPLIT_DAYS[currentSession]&&!isCustomSession(currentSession))entry.v=splitVariant(currentSession);
+  if(curClub())entry.club=curClub();
   DB.workoutLog[key]=entry;clearDraft(currentSession);save();
   stopRest();
   const done=currentSession;
@@ -2895,6 +2997,8 @@ $('#session-seg').addEventListener('click',e=>{const b=e.target.closest('button[
 $('#prog-pick').addEventListener('click',e=>{const b=e.target.closest('button[data-prog]');if(b)setProgram(b.dataset.prog)});
 /* réglages du split : présents dans le choix du bloc et sous la séance */
 document.addEventListener('click',e=>{
+  const k=e.target.closest('[data-club],[data-busy]');
+  if(k){if(k.dataset.club)setClub(k.dataset.club);else swapBusy(k.dataset.busy);return}
   const b=e.target.closest('[data-split-weak],[data-split-sh],[data-split-rappel]');if(!b)return;
   if(b.hasAttribute('data-split-weak'))setSplit('weak',b.dataset.splitWeak);
   else if(b.hasAttribute('data-split-sh'))setSplit('shoulders',b.dataset.splitSh);

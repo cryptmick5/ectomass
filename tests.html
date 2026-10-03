@@ -795,18 +795,23 @@ suite('Upper/Lower ectomorphe', () => {
   });
 
   test('séries, reps et repos suivent le tableau, pas les valeurs par défaut', () => {
-    eq(ev("setsFor('LA','squat',0)"), 4, 'squat');
-    eq(ev("setsFor('UA','dc',0)"), 3, 'développé couché secondaire');
+    eq(ev("setsFor('LA','presse',0)"), 4, 'presse');
+    eq(ev("setsFor('UA','chestpress',0)"), 3, 'presse pec secondaire');
+    eq(ev("setsFor('UB','chestpress',0)"), 4, 'presse pec prioritaire');
     eq(ev("setsFor('UA','curl',0)"), 4, 'bras prioritaires');
-    eq(ev("setsFor('UB','dc',0)"), 4, 'développé couché prioritaire');
     eq(ev("targetReps('triceps',0,'UA')"), 10, 'triceps 8-10');
     eq(ev("targetReps('triceps',0,'A')"), 15, 'les autres blocs gardent leur fourchette');
-    eq(ev("targetReps('dc',6,'UB')"), 6, 'jamais sous la fourchette');
-    eq(ev("restFor('LA','squat')"), 180);
+    eq(ev("targetReps('chestpress',6,'UB')"), 8, 'jamais sous la fourchette');
+    eq(ev("restFor('LA','presse')"), 180);
     eq(ev("restFor('A','squat')"), ev("EX.squat.rest"));
     const hors = ev("(function(){var h=[];Object.keys(UL_SPEC).forEach(function(s){Object.keys(UL_SPEC[s]).forEach(function(id){"
       + "for(var w=0;w<12;w++){var n=setsFor(s,id,w);if(n<2||n>5)h.push(s+':'+id+':'+n)}})});return h})()");
     eq(hors.length, 0, hors.slice(0, 3).join(', '));
+  });
+
+  test('version machines : ni barre libre ni squat dans le bloc', () => {
+    const ids = ev("Object.keys(UL_SPEC).map(function(s){return Object.keys(UL_SPEC[s]).join(',')}).join(',')");
+    ['squat', 'dc', 'ohp', 'rdl', 'sdt', 'traction'].forEach(id => ok(ids.split(',').indexOf(id) < 0, id + ' encore dans le bloc'));
   });
 
   test('volume hebdo : 6 à 14 séries directes sur les muscles clés, jamais plus de 14', () => {
@@ -822,19 +827,64 @@ suite('Upper/Lower ectomorphe', () => {
   });
 
   test('la séance affiche le repos du bloc et s\'enregistre', async () => {
-    ev("DB.program='ul';DB.workoutLog={};save();selectSession('LA');go('train')"); await wait(120);
-    const card = $$('#exo-list .exo[data-id="squat"]');
-    ok(card, 'squat absent de Bas A');
-    match(card.textContent, /4×8/, 'séries×reps du tableau absentes');
+    ev("DB.program='ul';DB.workoutLog={};DB.club=null;save();selectSession('LA');go('train')"); await wait(120);
+    const card = $$('#exo-list .exo[data-id="presse"]');
+    ok(card, 'presse absente de Bas A');
+    match(card.textContent, /4×10/, 'séries×reps du tableau absentes');
     match(card.textContent, /180s/, 'repos de 3 min absent');
     match($$('#exo-list .exo[data-id="legcurl"]').textContent, /Secondaire/, 'secondaire non signalé');
-    card.querySelector('.in-w').value = '60'; card.querySelector('.in-r').value = '8';
+    card.querySelector('.in-w').value = '60'; card.querySelector('.in-r').value = '10';
     await ev('saveWorkout()'); await wait(120);
     ev("closeModal('#summary-modal')");
     eq(ev("DB.workoutLog[todayKey()].session"), 'LA');
-    eq(ev("DB.exoState.squat.lastW"), 60);
+    eq(ev("DB.exoState.presse.lastW"), 60);
     ev("go('prog')"); await wait(80);
     match($$('#workout-history').textContent, /Bas A/, 'libellé de séance absent');
+  });
+
+  test('chaque nouvelle machine a son dessin, ses consignes et ses alternatives existent', () => {
+    const bad = ev("(function(){var b=[];['chestpress','dcsmith','shoulderpress','tiragevert','rdlsmith','presseuni','molletspresse','pecdeckinv'].forEach(function(id){"
+      + "var e=EX[id];if(!e||!ART[id]||!e.setup||!e.exec||!e.err)b.push(id)});"
+      + "Object.keys(BUSY_ALT).forEach(function(k){BUSY_ALT[k].forEach(function(a){if(!EX[a]||!ART[a])b.push(k+'>'+a)})});return b})()");
+    eq(bad.length, 0, bad.join(', '));
+  });
+
+  test('charges par club : chaque salle a sa mémoire, pas de mélange', async () => {
+    ev("DB.program='ul';DB.workoutLog={};DB.exoState={};DB.clubState={};DB.club='toulon';save();selectSession('UB');go('train')"); await wait(120);
+    match($$('#club-pick').textContent, /Toulon/, 'choix du club absent');
+    ev("var d=new Date();d.setDate(d.getDate()-2);var k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');"
+     + "DB.workoutLog[k]={session:'UB',week:0,club:'toulon',exos:{chestpress:[{w:40,r:10}]},ts:1};"
+     + "DB.clubState={toulon:{chestpress:{lastW:40,hitTop:true}}};save()");
+    eq(ev("recoWeight('chestpress',1)"), 42.5, 'reco Toulon');
+    ev("setClub('ciotat')"); await wait(60);
+    eq(ev("recoWeight('chestpress',1)"), null, 'la charge de Toulon ne doit pas servir à La Ciotat');
+    eq(ev("lastExoSets('chestpress')"), null, 'historique de Toulon affiché à La Ciotat');
+    const card = $$('#exo-list .exo[data-id="chestpress"]');
+    card.querySelector('.in-w').value = '35'; card.querySelector('.in-r').value = '10';
+    await ev('saveWorkout()'); await wait(120); ev("closeModal('#summary-modal')");
+    eq(ev("DB.workoutLog[todayKey()].club"), 'ciotat', 'club non enregistré');
+    eq(ev("DB.clubState.ciotat.chestpress.lastW"), 35);
+    eq(ev("DB.clubState.toulon.chestpress.lastW"), 40, 'Toulon écrasé');
+    ev("setClub('toulon')"); await wait(60);
+    eq(ev("recoState('chestpress').lastW"), 40);
+  });
+
+  test('machine prise : échange du jour, retour possible, plan intact', async () => {
+    ev("DB.program='ul';DB.workoutLog={};DB.sessionPlan={};DB.swap=null;DB.draft=null;save();selectSession('UB');go('train')"); await wait(120);
+    const btn = $$('#exo-list .exo[data-id="chestpress"] [data-busy]');
+    ok(btn, 'bouton machine prise absent');
+    match(btn.textContent, /Smith/, 'alternative attendue : développé guidé');
+    btn.click(); await wait(120);
+    ok($$('#exo-list .exo[data-id="dcsmith"]'), 'alternative non affichée');
+    ok(!$$('#exo-list .exo[data-id="chestpress"]'), 'exercice d\'origine encore là');
+    eq(ev("setsFor('UB','dcsmith',0)"), 4, 'l\'alternative doit hériter des séries du créneau');
+    eq(ev("isCustomSession('UB')"), false, 'le plan de séance a été modifié');
+    $$('#exo-list .exo[data-id="dcsmith"] [data-busy]').click(); await wait(120);
+    ok($$('#exo-list .exo[data-id="dchalt"]'), 'deuxième alternative absente');
+    $$('#exo-list .exo[data-id="dchalt"] [data-busy]').click(); await wait(120);
+    ok($$('#exo-list .exo[data-id="chestpress"]'), 'retour à la machine impossible');
+    ev("DB.swap={d:'2020-01-01',s:'UB',m:{chestpress:'dchalt'}};save()");
+    ok(ev("sessionExos('UB').indexOf('chestpress')>=0"), 'un échange d\'un autre jour persiste');
   });
 
   test('le bloc se choisit à l\'accueil et dans le sélecteur', async () => {
