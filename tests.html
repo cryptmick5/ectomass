@@ -869,6 +869,17 @@ suite('Upper/Lower ectomorphe', () => {
     eq(ev("recoState('chestpress').lastW"), 40);
   });
 
+  test('« Dernière » suit l\'exercice d\'une séance à l\'autre (Haut A ↔ Haut B)', async () => {
+    ev("DB.program='ul';DB.workoutLog={};DB.exoState={};DB.clubState={};DB.club=null;DB.swap=null;DB.draft=null;DB.sessionPlan={};save()");
+    ev("var kd=function(n){var d=new Date();d.setDate(d.getDate()-n);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};"
+     + "DB.workoutLog[kd(8)]={session:'UA',week:0,exos:{chestpress:[{w:40,r:10}]},ts:1};"
+     + "DB.workoutLog[kd(3)]={session:'UB',week:0,exos:{chestpress:[{w:60,r:10}]},ts:2};"
+     + "DB.exoState={chestpress:{lastW:60,hitTop:false}};save();selectSession('UA');go('train')"); await wait(120);
+    const prev = $$('#exo-list .exo[data-id="chestpress"] .prev').textContent;
+    match(prev, /60kg×10/, 'perf de Haut B (la plus récente) attendue : ' + prev);
+    ok(!/40kg×10/.test(prev), 'ancienne perf de Haut A affichée : ' + prev);
+  });
+
   test('machine prise : échange du jour, retour possible, plan intact', async () => {
     ev("DB.program='ul';DB.workoutLog={};DB.sessionPlan={};DB.swap=null;DB.draft=null;save();selectSession('UB');go('train')"); await wait(120);
     const btn = $$('#exo-list .exo[data-id="chestpress"] [data-busy]');

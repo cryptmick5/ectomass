@@ -2216,6 +2216,11 @@ function renderExos(){
   const edited=isCustomSession(currentSession);
   $('#session-tip').innerHTML=S.tip+(edited?' <span style="color:var(--amber)">· séance personnalisée</span> <a href="#" onclick="resetSession();return false" style="font-size:12px">réinitialiser</a>':'')+splitInfoHTML(currentSession);
   const cp=$('#club-pick');if(cp)cp.innerHTML=clubPickHTML();
+  /* « Dernière » = dernière fois que l'exercice a été fait, quelle que soit la
+     séance : en Upper/Lower la presse pectoraux, le tirage horizontal, le leg
+     curl… reviennent dans les deux séances Haut ou Bas. Prendre la dernière
+     séance du même nom affichait une perf d'il y a une semaine, en
+     contradiction avec la charge conseillée, calculée elle sur la plus récente. */
   const last=lastSessionData(currentSession);
   // today's already-logged session (for editing)
   const todayLog=(DB.workoutLog[todayKey()]&&DB.workoutLog[todayKey()].session===currentSession)?DB.workoutLog[todayKey()].exos:null;
@@ -2224,7 +2229,7 @@ function renderExos(){
   if(todayLog)Object.keys(todayLog).forEach(id=>{if(!exos.includes(id))exos.push(id)});
   const draft=draftFor(currentSession);const finishedArr=[];
   $('#exo-list').innerHTML=exos.map((id,idx)=>{
-    const e=exDef(id),tSets=setsFor(currentSession,id,wk),tReps=targetReps(id,wk,currentSession),rest=restFor(currentSession,id),reco=recoWeight(id,wk),prev=last[id]||lastExoSets(id);
+    const e=exDef(id),tSets=setsFor(currentSession,id,wk),tReps=targetReps(id,wk,currentSession),rest=restFor(currentSession,id),reco=recoWeight(id,wk),prev=lastExoSets(id)||last[id];
     const sk=splitKind(currentSession,id),weakOn=sk&&sk.kind!=='abdos'&&splitCfg().weak.includes(sk.g);
     const isTime=e.time;const done=todayLog&&todayLog[id];
     const prevTxt=done?`✅ Fait aujourd'hui — appuie pour modifier`:(prev?`Dernière${curClub()?' à '+CLUBS[curClub()]:''} : ${prev.map(s=>(s.w?s.w+'kg×':'')+s.r+(isTime?'s':'')).join(', ')}${stepBadge(id)}`:'Première fois');
